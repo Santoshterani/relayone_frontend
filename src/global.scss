@@ -1,0 +1,9 @@
+$navy: #12285e;
+$line: #e3e7f1;
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; background: #f4f6fb; color: #17203a; font-family: 'Poppins', system-ui, sans-serif; font-size: 13px; }
+code, pre, .mono { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+a { color: $navy; }
+.rl-code { background: #101729; color: #d6def5; border-radius: 8px; padding: 12px 14px; overflow: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
