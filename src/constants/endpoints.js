@@ -15,3 +15,5 @@ export const WALLET = '/api/wallet';
 export const TEAM = '/api/team';
 export const ROLES = '/api/roles';
 export const PLATFORM = '/api/platform';
+export const PLANS = '/api/plans';
+export const PLATFORM_PLANS = '/api/platform/plans';

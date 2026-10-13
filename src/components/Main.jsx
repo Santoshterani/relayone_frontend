@@ -16,6 +16,7 @@ import Team from './pages/Team/Team';
 import Roles from './pages/Roles/Roles';
 import Platform from './pages/Platform/Platform';
 import EnterpriseReview from './pages/Platform/EnterpriseReview';
+import Plans from './pages/Platform/Plans';
 import { NAV } from './layout/nav';
 import SignIn from './pages/Auth/SignIn';
 import SignUp from './pages/Auth/SignUp';
@@ -28,7 +29,7 @@ import { AppEmptyState } from './common';
 import { MSG } from '../constants';
 
 // Pages that exist so far. Everything else in the sidebar shows ComingSoon until its phase.
-const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/roles': Roles, '/platform': Platform };
+const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/roles': Roles, '/platform': Platform, '/pricing': Plans };
 
 const home = (user) => (user.isSuperAdmin ? '/platform' : '/');
 

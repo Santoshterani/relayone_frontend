@@ -1,4 +1,4 @@
-import { DashboardIcon, BuildingIcon, KeyIcon, TemplateIcon, ChannelIcon, MessageIcon, WebhookIcon, WalletIcon, TeamIcon, ShieldIcon, ListIcon } from '../icons';
+import { DashboardIcon, BuildingIcon, KeyIcon, TemplateIcon, ChannelIcon, MessageIcon, WebhookIcon, WalletIcon, TeamIcon, ShieldIcon, ListIcon, TagIcon } from '../icons';
 
 // Sidebar entries. `permission` decides who sees one; `superOnly` entries are for the Super Admin only.
 export const NAV = [
@@ -12,5 +12,6 @@ export const NAV = [
   { path: '/wallet', label: 'Wallet & billing', icon: WalletIcon, permission: 'wallet.read' },
   { path: '/team', label: 'Team', icon: TeamIcon, permission: 'team.read' },
   { path: '/roles', label: 'Roles', icon: ShieldIcon, permission: 'roles.manage' },
-  { path: '/platform', label: 'Enterprises', icon: ListIcon, permission: 'platform.manage' }
+  { path: '/platform', label: 'Enterprises', icon: ListIcon, permission: 'platform.manage' },
+  { path: '/pricing', label: 'Plans & pricing', icon: TagIcon, permission: 'platform.manage' }
 ];

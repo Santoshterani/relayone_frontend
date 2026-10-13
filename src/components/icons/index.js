@@ -13,4 +13,5 @@ export const WalletIcon = make('M3 7h16a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-
 export const TeamIcon = make('M9 11a3 3 0 100-6 3 3 0 000 6zM3 20a6 6 0 0112 0M17 11a3 3 0 10-1-5.8M21 20a5 5 0 00-4-4.9');
 export const ShieldIcon = make('M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4');
 export const ListIcon = make('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01');
+export const TagIcon = make('M3 12V4h8l10 10-8 8zM7.5 8.5h.01');
 export const LogoutIcon = make('M9 4H5v16h4M16 8l4 4-4 4M20 12H9');

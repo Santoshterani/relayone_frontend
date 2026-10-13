@@ -10,3 +10,4 @@ export * as walletService from './wallet.service';
 export * as teamService from './team.service';
 export * as roleService from './role.service';
 export * as platformService from './platform.service';
+export * as planService from './plan.service';
