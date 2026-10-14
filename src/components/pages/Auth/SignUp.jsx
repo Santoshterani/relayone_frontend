@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { TextField, Alert, Link, Box, Checkbox, FormControlLabel, FormHelperText, Typography } from '@mui/material';
 import AuthLayout from './AuthLayout';
+import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
 import { AppFormActions } from '../../common';
 import { authService } from '../../../services';
@@ -33,12 +34,12 @@ export default function SignUp() {
         <TextField label="Company name" autoFocus {...form.field('companyName')} />
         <TextField label="Your name" autoComplete="name" {...form.field('name')} />
         <TextField label="Work email" type="email" autoComplete="email" {...form.field('email')} />
-        <TextField label="Password" type="password" autoComplete="new-password" {...form.field('password')} helperText={form.errors.password || 'At least 8 characters with a letter and a number.'} />
+        <PasswordField label="Password" autoComplete="new-password" {...form.field('password')} helperText={form.errors.password || 'At least 8 characters with a letter and a number.'} />
         <Box>
           <FormControlLabel control={<Checkbox checked={form.values.acceptTerms} onChange={form.set('acceptTerms')} />} label="I accept the Terms of Service" />
           {form.errors.acceptTerms && <FormHelperText error>{form.errors.acceptTerms}</FormHelperText>}
         </Box>
-        <AppFormActions submitLabel="Create account" busy={form.busy} align="stretch" />
+        <AppFormActions submitLabel="Create account" busy={form.busy} align="stretch" color="secondary" />
       </Box>
     </AuthLayout>
   );

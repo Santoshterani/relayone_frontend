@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { TextField, Button, Alert, Link, Box } from '@mui/material';
 import AuthLayout from './AuthLayout';
+import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
 import { AppFormActions } from '../../common';
 import { useAppContext, useToast } from '../../../hooks';
@@ -29,14 +30,17 @@ export default function SignIn() {
   const resend = async () => { try { await authService.resendVerification(form.values.email.trim()); toast.success('If that account needs verifying, we sent a new link.'); } catch (e) { toast.error(e.message); } };
 
   return (
-    <AuthLayout title="Sign in" subtitle="Welcome back." footer={<>New to RelayLite? <Link component={RouterLink} to="/signup">Create an account</Link></>}>
+    <AuthLayout title="Sign in" subtitle="Welcome back. Sign in to manage your messaging.">
       <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
         {form.formError && <Alert severity="error">{form.formError}</Alert>}
         {needsVerify && <Button size="small" onClick={resend}>Send the verification email again</Button>}
         <TextField label="Work email" type="email" autoComplete="email" autoFocus {...form.field('email')} />
-        <TextField label="Password" type="password" autoComplete="current-password" {...form.field('password')} />
-        <Link component={RouterLink} to="/forgot-password" sx={{ justifySelf: 'end' }}>Forgot password?</Link>
-        <AppFormActions submitLabel="Sign in" busy={form.busy} align="stretch" />
+        <PasswordField label="Password" autoComplete="current-password" {...form.field('password')} />
+        <AppFormActions submitLabel="Sign in" busy={form.busy} align="stretch" color="secondary" />
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap', fontSize: 12.5 }}>
+        <Link component={RouterLink} to="/forgot-password" fontWeight={600}>Forgot password?</Link>
+        <Link component={RouterLink} to="/signup" fontWeight={600}>Create an account</Link>
       </Box>
     </AuthLayout>
   );

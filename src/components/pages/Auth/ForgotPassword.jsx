@@ -16,7 +16,7 @@ export default function ForgotPassword() {
         <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
           {form.formError && <Alert severity="error">{form.formError}</Alert>}
           <TextField label="Work email" type="email" autoFocus {...form.field('email')} />
-          <AppFormActions submitLabel="Send reset link" busy={form.busy} align="stretch" />
+          <AppFormActions submitLabel="Send reset link" busy={form.busy} align="stretch" color="secondary" />
         </Box>
       )}
     </AuthLayout>
