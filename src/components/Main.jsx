@@ -17,6 +17,7 @@ import Roles from './pages/Roles/Roles';
 import Platform from './pages/Platform/Platform';
 import EnterpriseReview from './pages/Platform/EnterpriseReview';
 import Plans from './pages/Platform/Plans';
+import Overview from './pages/Platform/Overview';
 import { NAV } from './layout/nav';
 import SignIn from './pages/Auth/SignIn';
 import SignUp from './pages/Auth/SignUp';
@@ -29,9 +30,9 @@ import { AppEmptyState } from './common';
 import { MSG } from '../constants';
 
 // Pages that exist so far. Everything else in the sidebar shows ComingSoon until its phase.
-const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/roles': Roles, '/platform': Platform, '/pricing': Plans };
+const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/roles': Roles, '/platform': Platform, '/pricing': Plans, '/overview': Overview };
 
-const home = (user) => (user.isSuperAdmin ? '/platform' : '/');
+const home = (user) => (user.isSuperAdmin ? '/overview' : '/');
 
 function Guarded({ children }) {
   const { user, loading } = useAppContext();

@@ -10,3 +10,5 @@ export { default as AppMetricCard } from './AppMetricCard';
 export { default as AppPageHeader } from './AppPageHeader';
 export { default as AppSectionCard } from './AppSectionCard';
 export { default as AppStatusChip } from './AppStatusChip';
+export { default as DonutChart, CHART_COLORS } from './DonutChart';
+export { default as BarChart } from './BarChart';

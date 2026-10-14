@@ -20,7 +20,7 @@ export default function SignIn() {
     try {
       const { data } = await authService.login({ email: v.email.trim(), password: v.password });
       startSession(data);
-      navigate((location.state && location.state.from) || (data.user.isSuperAdmin ? '/platform' : '/'), { replace: true });
+      navigate((location.state && location.state.from) || (data.user.isSuperAdmin ? '/overview' : '/'), { replace: true });
     } catch (err) {
       if (err.status === 403 && /verify|confirm/i.test(err.message)) setNeedsVerify(true);
       throw err;
