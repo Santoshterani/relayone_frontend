@@ -15,10 +15,10 @@ function AccountBanner({ account, can }) {
   switch (account.status) {
     case 'sandbox': return <Alert severity="warning" sx={{ mb: 2 }} action={can('enterprise.read') && link('/profile', account.profileComplete ? 'Submit for review' : 'Complete profile')}>
       Sandbox: {left} of {account.sandboxLimit} test messages left. Complete the profile and submit it for approval to send live messages.</Alert>;
-    case 'review': return <Alert severity="info" sx={{ mb: 2 }}>Your profile is with the RelayLite team for review. You can keep using the sandbox meanwhile ({left} test messages left).</Alert>;
+    case 'review': return <Alert severity="info" sx={{ mb: 2 }}>Your profile is with the RelayOne team for review. You can keep using the sandbox meanwhile ({left} test messages left).</Alert>;
     case 'changes': return <Alert severity="warning" sx={{ mb: 2 }} action={can('enterprise.read') && link('/profile', 'Update profile')}><b>Changes needed.</b> {account.reviewNote}</Alert>;
     case 'rejected': return <Alert severity="error" sx={{ mb: 2 }}><b>Not approved.</b> {account.reviewNote} Contact support if you think this is a mistake.</Alert>;
-    case 'suspended': return <Alert severity="error" sx={{ mb: 2 }}>This account is suspended, so sending is stopped. Contact RelayLite support.</Alert>;
+    case 'suspended': return <Alert severity="error" sx={{ mb: 2 }}>This account is suspended, so sending is stopped. Contact RelayOne support.</Alert>;
     default: return null;
   }
 }

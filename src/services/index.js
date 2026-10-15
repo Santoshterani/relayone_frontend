@@ -11,3 +11,6 @@ export * as teamService from './team.service';
 export * as roleService from './role.service';
 export * as platformService from './platform.service';
 export * as planService from './plan.service';
+export * as paymentService from './payment.service';
+export * as supportService from './support.service';
+export * as staffService from './staff.service';

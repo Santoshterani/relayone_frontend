@@ -5,7 +5,7 @@ import { useApi } from '../../../hooks';
 import { messageService } from '../../../services';
 import { dateTime, money4 } from '../../../utils/format';
 
-const SENDER = { own_smtp: 'Your SMTP server', shared: 'Shared RelayLite sender', inapp: 'In-app (live socket)' };
+const SENDER = { own_smtp: 'Your SMTP server', shared: 'Shared RelayOne sender', inapp: 'In-app (live socket)' };
 const Row = ({ label, children }) => (<Box sx={{ display: 'flex', py: 0.6, gap: 2 }}><Typography color="text.secondary" sx={{ width: 110, flexShrink: 0 }}>{label}</Typography><Box sx={{ minWidth: 0, wordBreak: 'break-word' }}>{children}</Box></Box>);
 
 /** Details of one message and its status history. */

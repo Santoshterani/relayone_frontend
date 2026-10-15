@@ -15,3 +15,5 @@ export const ShieldIcon = make('M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l
 export const ListIcon = make('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01');
 export const TagIcon = make('M3 12V4h8l10 10-8 8zM7.5 8.5h.01');
 export const LogoutIcon = make('M9 4H5v16h4M16 8l4 4-4 4M20 12H9');
+export const LifebuoyIcon = make('M12 21a9 9 0 100-18 9 9 0 000 18zM12 15a3 3 0 100-6 3 3 0 000 6zM5.6 5.6l3.2 3.2M15.2 15.2l3.2 3.2M18.4 5.6l-3.2 3.2M8.8 15.2l-3.2 3.2');
+export const HeadsetIcon = make('M4 14v-2a8 8 0 0116 0v2M4 14h3v5H5a1 1 0 01-1-1zM20 14h-3v5h2a1 1 0 001-1zM17 19c0 1.5-2 2-5 2');

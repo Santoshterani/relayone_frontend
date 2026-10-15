@@ -22,7 +22,7 @@ export default function AppShell() {
 
   const menu = (
     <Box sx={{ width: WIDTH, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Typography sx={{ fontWeight: 600, fontSize: 18, color: 'primary.main', px: 2.5, py: 2 }}>{APP_NAME}</Typography>
+      <Box sx={{ px: 2.5, py: 2 }}><Typography sx={{ fontWeight: 600, fontSize: 18, color: 'primary.main', lineHeight: 1.15 }}>{APP_NAME}</Typography><Typography sx={{ fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'text.secondary' }}>CPaaS Portal</Typography></Box>
       <List dense sx={{ px: 1, flex: 1 }}>
         {items.map((n) => (
           <ListItemButton key={n.path} component={NavLink} to={n.path} end={n.end} onClick={() => setOpen(false)}
@@ -44,8 +44,8 @@ export default function AppShell() {
         <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
           <Toolbar variant="dense" sx={{ gap: 1.5 }}>
             {!wide && <IconButton onClick={() => setOpen(true)} aria-label="Open menu" size="small">☰</IconButton>}
-            <Typography sx={{ fontWeight: 600, flex: 1 }} noWrap>{user.isSuperAdmin ? 'RelayLite platform' : user.enterprise.name}</Typography>
-            {!user.isSuperAdmin && <AppStatusChip status={user.enterprise.status} />}
+            <Typography sx={{ fontWeight: 600, flex: 1 }} noWrap>{user.enterprise ? user.enterprise.name : user.isSuperAdmin ? 'RelayOne platform' : 'RelayOne support'}</Typography>
+            {user.enterprise && <AppStatusChip status={user.enterprise.status} />}
             <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Account menu" size="small"><Avatar sx={{ width: 28, height: 28, fontSize: 13, bgcolor: 'primary.main' }}>{user.name.slice(0, 1).toUpperCase()}</Avatar></IconButton>
             <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
               <Box sx={{ px: 2, py: 1 }}><Typography sx={{ fontWeight: 600 }}>{user.name}</Typography><Typography variant="caption" color="text.secondary">{user.email} · {getCurrentUserRole(user)}</Typography></Box>

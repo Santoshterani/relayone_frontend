@@ -5,6 +5,7 @@ const TONES = {
   delivered: ['success', 'Delivered'], sent: ['info', 'Sent'], queued: ['default', 'Queued'], failed: ['error', 'Failed'],
   active: ['success', 'Active'], sandbox: ['warning', 'Sandbox'], review: ['info', 'In review'], changes: ['warning', 'Changes needed'],
   rejected: ['error', 'Rejected'], suspended: ['error', 'Suspended'], verified: ['success', 'Verified'], unverified: ['default', 'Not verified'],
+  open: ['info', 'Open'], in_progress: ['warning', 'In progress'], escalated: ['error', 'Escalated'], resolved: ['success', 'Resolved'], closed: ['default', 'Closed'],
   invited: ['info', 'Invited'], disabled: ['default', 'Disabled'], pending: ['default', 'Pending']
 };
 export default function AppStatusChip({ status, label }) {

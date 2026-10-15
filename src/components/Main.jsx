@@ -13,11 +13,14 @@ import Messages from './pages/Messages/Messages';
 import Webhooks from './pages/Webhooks/Webhooks';
 import Wallet from './pages/Wallet/Wallet';
 import Team from './pages/Team/Team';
-import Roles from './pages/Roles/Roles';
 import Platform from './pages/Platform/Platform';
 import EnterpriseReview from './pages/Platform/EnterpriseReview';
 import Plans from './pages/Platform/Plans';
 import Overview from './pages/Platform/Overview';
+import Support from './pages/Support/Support';
+import Desk from './pages/Support/Desk';
+import SupportTeam from './pages/Support/SupportTeam';
+import TicketView from './pages/Support/TicketView';
 import { NAV } from './layout/nav';
 import SignIn from './pages/Auth/SignIn';
 import SignUp from './pages/Auth/SignUp';
@@ -30,9 +33,9 @@ import { AppEmptyState } from './common';
 import { MSG } from '../constants';
 
 // Pages that exist so far. Everything else in the sidebar shows ComingSoon until its phase.
-const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/roles': Roles, '/platform': Platform, '/pricing': Plans, '/overview': Overview };
+const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/platform': Platform, '/pricing': Plans, '/overview': Overview, '/support': Support, '/desk': Desk, '/support-team': SupportTeam };
 
-const home = (user) => (user.isSuperAdmin ? '/overview' : '/');
+const home = (user) => (user.isSuperAdmin ? '/overview' : user.isStaff ? '/desk' : '/');
 
 function Guarded({ children }) {
   const { user, loading } = useAppContext();
@@ -67,6 +70,8 @@ export default function Main() {
           const Page = PAGES[n.path];
           return <Route key={n.path} path={n.path} element={<Gate permission={n.permission}>{Page ? <Page /> : <ComingSoon title={n.label} />}</Gate>} />;
         })}
+        <Route path="/support/:id" element={<Gate permission="tickets.read"><TicketView staff={false} /></Gate>} />
+        <Route path="/desk/:id" element={<Gate permission="support.view"><TicketView staff /></Gate>} />
         <Route path="/platform/:id" element={<Gate permission="platform.manage"><EnterpriseReview /></Gate>} />
         <Route path="/templates/new" element={<Gate permission="templates.write"><TemplateEditor /></Gate>} />
         <Route path="/templates/:id" element={<Gate permission="templates.read"><TemplateEditor /></Gate>} />

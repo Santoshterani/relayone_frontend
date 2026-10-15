@@ -61,7 +61,7 @@ export default function ApiKeys() {
     try { await apiKeyService.revokeKey(revoking.id); toast.success('Key revoked. It stops working immediately.'); setRevoking(null); reload(); } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
   const snippet = `curl -X POST ${BASE_URL}/v1/messages \\
-  -H "Authorization: Bearer rl_live_YOUR_KEY" \\
+  -H "Authorization: Bearer ro_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{ "channel": "email", "to": "user@example.com",
         "subject": "Hello {name}", "body": "Welcome, {name}!",

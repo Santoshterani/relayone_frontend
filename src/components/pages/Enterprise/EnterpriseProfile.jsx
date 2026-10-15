@@ -12,8 +12,8 @@ const FIELDS = ['legalName', 'brandName', 'industry', 'companySize', 'website', 
 
 const STATUS_TEXT = {
   sandbox: 'Fill in your details, then submit them for approval. Until approved you can send a few test messages.',
-  review: 'The RelayLite team is reviewing your details, so editing is locked for now.',
-  changes: 'The RelayLite team asked for changes. Update the details and submit again.',
+  review: 'The RelayOne team is reviewing your details, so editing is locked for now.',
+  changes: 'The RelayOne team asked for changes. Update the details and submit again.',
   rejected: 'This application was not approved.',
   active: 'Approved. You can send live messages. You can still keep these details up to date.',
   suspended: 'This account is suspended.'
@@ -63,11 +63,11 @@ export default function EnterpriseProfile() {
 
   return (
     <>
-      <AppPageHeader title="Enterprise" subtitle="Your business details. The RelayLite team checks these before you can send live messages."
+      <AppPageHeader title="Enterprise" subtitle="Your business details. The RelayOne team checks these before you can send live messages."
         actions={<AppStatusChip status={ent.status} />} />
       <Alert severity={{ review: 'info', active: 'success', changes: 'warning', rejected: 'error', suspended: 'error' }[ent.status] || 'warning'} sx={{ mb: 2 }}>
         {STATUS_TEXT[ent.status]}{ent.submittedAt && ent.status === 'review' ? ` Submitted ${date(ent.submittedAt)}.` : ''}
-        {ent.reviewNote && ['changes', 'rejected'].includes(ent.status) && <Box sx={{ mt: 0.5 }}><b>Note from RelayLite:</b> {ent.reviewNote}</Box>}
+        {ent.reviewNote && ['changes', 'rejected'].includes(ent.status) && <Box sx={{ mt: 0.5 }}><b>Note from RelayOne:</b> {ent.reviewNote}</Box>}
       </Alert>
 
       <AppSectionCard title="Company">
@@ -108,7 +108,7 @@ export default function EnterpriseProfile() {
         </Grid>
       </AppSectionCard>
 
-      <AppSectionCard title="How you will use RelayLite">
+      <AppSectionCard title="How you will use RelayOne">
         <Typography variant="caption" color="text.secondary">What will you send?</Typography>
         <FormGroup row sx={{ mb: 2 }}>
           {USES.map((u) => <FormControlLabel key={u} label={u} control={<Checkbox size="small" disabled={!editable} checked={(form.declaredUses || []).includes(u)} onChange={() => toggleUse(u)} />} />)}
@@ -124,7 +124,7 @@ export default function EnterpriseProfile() {
           {canSubmit && missing.length > 0 && <Chip size="small" variant="outlined" color="warning" label={`${missing.length} required field${missing.length === 1 ? '' : 's'} left`} />}
         </Box>
       )}
-      <AppConfirmDialog open={confirm} title="Submit for review?" message="Your details are locked while the RelayLite team reviews them. You will get an email with the decision." confirmLabel="Submit" busy={busy} onConfirm={submit} onClose={() => setConfirm(false)} />
+      <AppConfirmDialog open={confirm} title="Submit for review?" message="Your details are locked while the RelayOne team reviews them. You will get an email with the decision." confirmLabel="Submit" busy={busy} onConfirm={submit} onClose={() => setConfirm(false)} />
     </>
   );
 }

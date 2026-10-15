@@ -25,7 +25,7 @@ export default function AcceptInvite() {
   const onSubmit = form.submit(async (v) => {
     const { data } = await authService.acceptInvite({ token, name: v.name.trim(), password: v.password });
     startSession(data);
-    navigate('/', { replace: true });
+    navigate(data.user.isStaff ? '/desk' : '/', { replace: true });
   });
 
   if (error) return <AuthLayout title="Invitation"><Alert severity="error">{error}</Alert><Link component={RouterLink} to="/signin" sx={{ display: 'inline-block', mt: 2 }}>Go to sign in</Link></AuthLayout>;

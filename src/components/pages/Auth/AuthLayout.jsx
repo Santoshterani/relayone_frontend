@@ -12,7 +12,7 @@ const POINTS = [
 function Brand({ light }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-      <Box sx={{ width: 34, height: 34, borderRadius: '9px', bgcolor: colors.cta, color: colors.ctaInk, display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, flex: 'none' }}>RL</Box>
+      <Box sx={{ width: 34, height: 34, borderRadius: '9px', bgcolor: colors.cta, color: colors.ctaInk, display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, flex: 'none' }}>RO</Box>
       <Box>
         <Typography component="b" sx={{ display: 'block', fontSize: 14, lineHeight: 1.15, fontWeight: 600, color: light ? '#fff' : 'text.primary' }}>{APP_NAME}</Typography>
         {light && <Typography component="small" sx={{ display: 'block', fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.72)' }}>CPaaS Portal</Typography>}

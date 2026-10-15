@@ -2,7 +2,7 @@ import axios from 'axios';
 import { BASE_URL } from '../config';
 import { getAuthToken, clearAuthToken } from '../config/session';
 
-export const UNAUTHORIZED_EVENT = 'relaylite:unauthorized';
+export const UNAUTHORIZED_EVENT = 'relayone:unauthorized';
 const instance = axios.create({ baseURL: BASE_URL, timeout: 20000, headers: { 'Content-Type': 'application/json' } });
 
 instance.interceptors.request.use((config) => {

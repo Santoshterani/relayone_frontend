@@ -6,7 +6,7 @@ import { planService, walletService } from '../../../services';
 import { money, money4 } from '../../../utils/format';
 import PlanDialog from './PlanDialog';
 
-const PRICES = [['email_own', 'Email, enterprise\'s own SMTP', 'We only run the queue, retries and tracking.'], ['email_shared', 'Email, shared RelayLite sender', 'Includes the sending itself.'], ['inapp', 'In-app notification', 'Delivered over the live connection or the inbox.']];
+const PRICES = [['email_own', 'Email, enterprise\'s own SMTP', 'We only run the queue, retries and tracking.'], ['email_shared', 'Email, shared RelayOne sender', 'Includes the sending itself.'], ['inapp', 'In-app notification', 'Delivered over the live connection or the inbox.']];
 
 /** Super Admin: the wallet price per message, and the prepaid plans (message buckets) enterprises can buy. */
 export default function Plans() {

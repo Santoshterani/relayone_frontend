@@ -53,14 +53,14 @@ function EmailCard({ data, canWrite, onChanged }) {
   };
   const verify = async () => { const r = await run('verify', () => channelService.verifyEmail()); if (r) { onChanged(); const s = r.data.email.sender; if (s.status === 'verified') toast.success('Connected. Your emails now send from your own server.'); } };
   const sendTest = async () => { if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testTo.trim())) { toast.error('Enter an email address to send the test to.'); return; } await run('test', () => channelService.testEmail(testTo.trim()), `Test email sent to ${testTo.trim()}.`); };
-  const remove = async () => { setRemoving(false); const r = await run('remove', () => channelService.removeEmail(), 'Removed. Emails go out from the shared RelayLite sender.'); if (r) onChanged(); };
+  const remove = async () => { setRemoving(false); const r = await run('remove', () => channelService.removeEmail(), 'Removed. Emails go out from the shared RelayOne sender.'); if (r) onChanged(); };
 
   const own = data.email.mode === 'own_smtp';
   const u = usage.data;
   return (
-    <AppSectionCard title="Email sender" subtitle="Send from your own domain through your own SMTP server, or use the shared RelayLite sender."
+    <AppSectionCard title="Email sender" subtitle="Send from your own domain through your own SMTP server, or use the shared RelayOne sender."
       actions={<Chip size="small" color={own ? 'success' : 'default'} variant={own ? 'filled' : 'outlined'} label={own ? 'Using your SMTP' : 'Using shared sender'} />}>
-      {!own && <Alert severity="info" sx={{ mb: 2 }}>Right now emails go out from the shared RelayLite address, at a slightly higher price. Connect your own SMTP server so mail comes from your domain.</Alert>}
+      {!own && <Alert severity="info" sx={{ mb: 2 }}>Right now emails go out from the shared RelayOne address, at a slightly higher price. Connect your own SMTP server so mail comes from your domain.</Alert>}
       {own && u && u.dailyLimit != null && (
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}><Typography variant="caption" color="text.secondary">Sent in the last 24 hours</Typography><Typography variant="caption"><b>{u.sentLast24h}</b> of {u.dailyLimit}</Typography></Box>
@@ -103,7 +103,7 @@ function EmailCard({ data, canWrite, onChanged }) {
           <Button variant="outlined" onClick={sendTest} disabled={!!busy} sx={{ mt: 0.25 }}>{busy === 'test' ? 'Sending…' : 'Send test'}</Button>
         </Box>
       )}
-      <AppConfirmDialog open={removing} danger title="Remove your SMTP sender?" confirmLabel="Remove" message="Emails will go out from the shared RelayLite sender at the shared price. You can connect your server again any time." onConfirm={remove} onClose={() => setRemoving(false)} />
+      <AppConfirmDialog open={removing} danger title="Remove your SMTP sender?" confirmLabel="Remove" message="Emails will go out from the shared RelayOne sender at the shared price. You can connect your server again any time." onConfirm={remove} onClose={() => setRemoving(false)} />
     </AppSectionCard>
   );
 }

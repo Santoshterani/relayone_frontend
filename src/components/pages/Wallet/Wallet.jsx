@@ -3,14 +3,15 @@ import { Alert, Box, Button, Chip, LinearProgress, Paper, TextField, Typography 
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppMetricCard, AppDataTable, AppConfirmDialog, AppSkeletonLoader, CustomPagination } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
-import { walletService, planService } from '../../../services';
+import { walletService, planService, paymentService } from '../../../services';
+import { pay, PaymentCancelled } from '../../../utils/razorpay';
 import { date, dateTime, money, money4 } from '../../../utils/format';
 
 const QUICK = [5, 10, 25, 50];
 const TYPE = { topup: ['success', 'Top-up'], charge: ['default', 'Charge'], refund: ['info', 'Refund'], adjustment: ['info', 'Credit'] };
 
 export default function Wallet() {
-  const { can } = useAppContext();
+  const { can, user } = useAppContext();
   const toast = useToast();
   const topup = can('wallet.topup');
   const wallet = useApi(() => walletService.getWallet(), []);
@@ -21,6 +22,9 @@ export default function Wallet() {
   const [threshold, setThreshold] = useState('');
   const [busy, setBusy] = useState('');
   const plans = useApi(() => planService.mine(), []);
+  const gateway = useApi(() => paymentService.getConfig(), []);
+  const cfg = gateway.data || { provider: 'demo', currency: 'USD', usdRate: 1 };
+  const inGateway = (usd) => (cfg.currency === 'INR' ? `₹${(Number(usd) * cfg.usdRate).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : money(usd));
   const [buying, setBuying] = useState(null);
 
   if (wallet.loading && !wallet.data) return <><AppPageHeader title="Wallet & billing" /><AppSkeletonLoader variant="card" /></>;
@@ -28,15 +32,19 @@ export default function Wallet() {
   const w = wallet.data;
   const prices = w.prices || {};
 
-  const pay = async () => {
+  const addMoney = async () => {
     const n = Number(amount);
-    if (!(n >= 1 && n <= 1000)) { setAmountError('Enter an amount between $1 and $1,000.'); return; }
+    if (!(n >= cfg.topupMin && n <= cfg.topupMax)) { setAmountError(`Enter an amount between $${cfg.topupMin} and $${Number(cfg.topupMax).toLocaleString()}.`); return; }
     setBusy('topup');
-    try { await walletService.topUp(n); toast.success(`${money(n)} added to your wallet.`); wallet.reload(); setPage(1); tx.reload(); } catch (e) { setAmountError(e.message); } finally { setBusy(''); }
+    try { await pay({ kind: 'topup', amount: n }, user); toast.success(`${money(n)} added to your wallet.`); wallet.reload(); setPage(1); tx.reload(); }
+    catch (e) { if (!(e instanceof PaymentCancelled)) setAmountError(e.message); }
+    finally { setBusy(''); }
   };
   const buyPlan = async () => {
     setBusy('buy');
-    try { const r = await planService.buy(buying.id); toast.success(`${buying.name} plan added: ${Number(buying.messages).toLocaleString()} messages.`); setBuying(null); plans.reload(); tx.reload(); return r; } catch (e) { toast.error(e.message); setBuying(null); } finally { setBusy(''); }
+    try { await pay({ kind: 'plan', planId: buying.id }, user); toast.success(`${buying.name} plan added: ${Number(buying.messages).toLocaleString()} messages.`); plans.reload(); wallet.reload(); tx.reload(); }
+    catch (e) { if (!(e instanceof PaymentCancelled)) toast.error(e.message); }
+    finally { setBusy(''); setBuying(null); }
   };
   const saveThreshold = async () => {
     const n = Number(threshold);
@@ -98,8 +106,8 @@ export default function Wallet() {
                   ]} />
                 </Box>)}
             </AppSectionCard>
-            <AppConfirmDialog open={!!buying} title={buying ? `Buy the ${buying.name} plan?` : ''} message={buying ? `${money(buying.price)} for ${Number(buying.messages).toLocaleString()} messages. Demo mode: no card is charged.` : ''}
-              confirmLabel={busy === 'buy' ? 'Buying…' : 'Buy plan'} busy={busy === 'buy'} onConfirm={buyPlan} onClose={() => setBuying(null)} />
+            <AppConfirmDialog open={!!buying} title={buying ? `Buy the ${buying.name} plan?` : ''} message={buying ? (cfg.provider === 'razorpay' ? `${money(buying.price)} (${inGateway(buying.price)}) for ${Number(buying.messages).toLocaleString()} messages. You will pay securely with Razorpay.` : `${money(buying.price)} for ${Number(buying.messages).toLocaleString()} messages. Demo mode: no card is charged.`) : ''}
+              confirmLabel={busy === 'buy' ? 'Waiting for payment…' : cfg.provider === 'razorpay' ? 'Continue to payment' : 'Buy plan'} busy={busy === 'buy'} onConfirm={buyPlan} onClose={() => setBuying(null)} />
           </>);
       })()}
 
@@ -110,9 +118,9 @@ export default function Wallet() {
               <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>{QUICK.map((q) => <Chip key={q} label={`$${q}`} clickable color={Number(amount) === q ? 'primary' : 'default'} variant={Number(amount) === q ? 'filled' : 'outlined'} onClick={() => { setAmount(String(q)); setAmountError(''); }} />)}</Box>
               <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
                 <TextField label="Amount (USD)" type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setAmountError(''); }} error={!!amountError} helperText={amountError} sx={{ maxWidth: 200 }} />
-                <Button variant="contained" onClick={pay} disabled={!!busy} sx={{ mt: 0.25 }}>{busy === 'topup' ? 'Adding…' : 'Add money'}</Button>
+                <Button variant="contained" onClick={addMoney} disabled={!!busy} sx={{ mt: 0.25 }}>{busy === 'topup' ? 'Waiting for payment…' : cfg.provider === 'razorpay' ? 'Pay with Razorpay' : 'Add money'}</Button>
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>Demo mode: no card is charged. A payment provider connects here later.</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{cfg.provider === 'razorpay' ? `You pay ${inGateway(amount || 0)} (${money(amount || 0)} at ₹${cfg.usdRate} per $1) by card, UPI or net banking. Payments are processed securely by Razorpay.` : 'Demo mode: no card is charged. Set PAYMENT_PROVIDER=razorpay on the server to take real payments.'}</Typography>
             </AppSectionCard>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>

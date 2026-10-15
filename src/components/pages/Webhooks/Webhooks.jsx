@@ -25,7 +25,7 @@ function AddDialog({ open, onClose, onCreated }) {
         <>
           <DialogTitle sx={{ fontSize: 16 }}>Copy your signing secret</DialogTitle>
           <DialogContent>
-            <Alert severity="warning" sx={{ mb: 2 }}>This secret is shown once. Use it on your server to check that requests really come from RelayLite.</Alert>
+            <Alert severity="warning" sx={{ mb: 2 }}>This secret is shown once. Use it on your server to check that requests really come from RelayOne.</Alert>
             <Box className="rl-code mono" sx={{ userSelect: 'all' }}>{created.secret}</Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={() => copy(created.secret, 'Secret')}>Copy secret</Button><Button variant="contained" onClick={close}>I have saved it</Button></DialogActions>
@@ -33,7 +33,7 @@ function AddDialog({ open, onClose, onCreated }) {
       ) : (
         <Box component="form" onSubmit={submit} noValidate>
           <DialogTitle sx={{ fontSize: 16 }}>Add a webhook endpoint</DialogTitle>
-          <DialogContent><TextField label="Endpoint URL" autoFocus value={url} onChange={(e) => { setUrl(e.target.value); setError(''); }} error={!!error} helperText={error || 'We send a POST here whenever a message is sent, delivered or fails. Must be https in production.'} sx={{ mt: 1 }} placeholder="https://api.yourapp.com/relaylite/events" /></DialogContent>
+          <DialogContent><TextField label="Endpoint URL" autoFocus value={url} onChange={(e) => { setUrl(e.target.value); setError(''); }} error={!!error} helperText={error || 'We send a POST here whenever a message is sent, delivered or fails. Must be https in production.'} sx={{ mt: 1 }} placeholder="https://api.yourapp.com/relayone/events" /></DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>Add endpoint</Button></DialogActions>
         </Box>
       )}
@@ -47,7 +47,7 @@ function verify(rawBody, header, secret) {
   const [t, v1] = header.split(',').map((p) => p.split('=')[1]);
   const expected = crypto.createHmac('sha256', secret).update(t + '.' + rawBody).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
-}  // header: X-RelayLite-Signature   (also reject if t is older than 5 minutes)`;
+}  // header: X-RelayOne-Signature   (also reject if t is older than 5 minutes)`;
 
 export default function Webhooks() {
   const { can } = useAppContext();
@@ -95,7 +95,7 @@ export default function Webhooks() {
         <CustomPagination meta={deliveries.meta} onPage={setPage} />
       </AppSectionCard>
 
-      <AppSectionCard title="Verify the signature" subtitle="Each request has an X-RelayLite-Signature header: t=<time>,v1=<HMAC-SHA256 of 't.body'>.">
+      <AppSectionCard title="Verify the signature" subtitle="Each request has an X-RelayOne-Signature header: t=<time>,v1=<HMAC-SHA256 of 't.body'>.">
         <pre className="rl-code mono" style={{ margin: 0 }}>{VERIFY}</pre>
       </AppSectionCard>
       <AddDialog open={adding} onClose={() => setAdding(false)} onCreated={hooks.reload} />

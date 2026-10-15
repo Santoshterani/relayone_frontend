@@ -17,3 +17,7 @@ export const ROLES = '/api/roles';
 export const PLATFORM = '/api/platform';
 export const PLANS = '/api/plans';
 export const PLATFORM_PLANS = '/api/platform/plans';
+export const PAYMENTS = '/api/payments';
+export const TICKETS = '/api/tickets';
+export const SUPPORT = '/api/support';
+export const STAFF = '/api/staff';
