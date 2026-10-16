@@ -30,7 +30,7 @@ export default function NewTicketDialog({ open, onClose, onCreated }) {
           <TextField label="Subject" autoFocus value={f.subject} onChange={set('subject')} error={!!errors.subject} helperText={errors.subject} inputProps={{ maxLength: 200 }} />
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
             <TextField select label="Category" value={f.category} onChange={set('category')}>{CATEGORIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
-            <TextField select label="Priority" value={f.priority} onChange={set('priority')} helperText="Urgent is for outages that stop sending.">{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
+            <TextField select label="Priority" value={f.priority} onChange={set('priority')} helperText="Critical is for outages that stop sending. Escalations also become Critical.">{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
           </Box>
           <TextField label="What is happening?" multiline minRows={5} value={f.body} onChange={set('body')} error={!!errors.body} helperText={errors.body || 'Include error messages, message IDs and when it started.'} />
         </DialogContent>

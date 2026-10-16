@@ -6,6 +6,8 @@ import { AppPageHeader, AppSectionCard, AppMetricCard, AppSkeletonLoader, AppSta
 import { useApi, useToast } from '../../../hooks';
 import { platformService } from '../../../services';
 import { date, money } from '../../../utils/format';
+import { openBlob } from '../../../utils/openFile';
+import DocumentList from '../Enterprise/DocumentList';
 
 const FIELDS = [
   ['Company', [['legalName', 'Legal name'], ['brandName', 'Brand name'], ['industry', 'Industry'], ['companySize', 'Size'], ['website', 'Website'], ['registrationNo', 'Registration no.']]],
@@ -46,6 +48,31 @@ function DecisionDialog({ id, decision, onClose, onDone }) {
   );
 }
 
+function DocDialog({ id, target, onClose, onDone }) {
+  const toast = useToast();
+  const [note, setNote] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const close = () => { setNote(''); setError(''); onClose(); };
+  const submit = async (e) => {
+    e.preventDefault();
+    if (target.decision === 'rejected' && note.trim().length < 3) { setError('Say what is wrong so the enterprise can upload a better one.'); return; }
+    setBusy(true);
+    try { await platformService.reviewDocument(id, target.doc.type, target.decision, note.trim()); toast.success(target.decision === 'verified' ? 'Document verified.' : 'Document rejected.'); close(); onDone(); } catch (err) { setError(err.message); } finally { setBusy(false); }
+  };
+  return (
+    <Dialog open={!!target} onClose={busy ? undefined : close} maxWidth="xs" fullWidth>
+      {target && (
+        <Box component="form" onSubmit={submit} noValidate>
+          <DialogTitle sx={{ fontSize: 16 }}>{target.decision === 'verified' ? 'Verify' : 'Reject'}: {target.doc.title}</DialogTitle>
+          <DialogContent sx={{ pt: '8px !important' }}>
+            <TextField label={target.decision === 'verified' ? 'Note (optional)' : 'Reason shown to the enterprise'} multiline minRows={3} autoFocus value={note} onChange={(e) => { setNote(e.target.value); setError(''); }} error={!!error} helperText={error} />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" color={target.decision === 'verified' ? 'success' : 'error'} disabled={busy}>{target.decision === 'verified' ? 'Verify' : 'Reject'}</Button></DialogActions>
+        </Box>
+      )}
+    </Dialog>
+  );
+}
+
 /** Super Admin: one enterprise, read-only profile, and the buttons that move it through approval. */
 export default function EnterpriseReview() {
   const { id } = useParams();
@@ -55,6 +82,7 @@ export default function EnterpriseReview() {
   const [decision, setDecision] = useState(null);
   const [confirm, setConfirm] = useState(null); // 'suspend' | 'reactivate'
   const [busy, setBusy] = useState(false);
+  const [docReview, setDocReview] = useState(null);
 
   if (loading && !data) return <><AppPageHeader title="Enterprise" /><AppSkeletonLoader variant="card" /></>;
   if (error && !data) return <Alert severity="error" action={<Button color="inherit" onClick={() => navigate('/platform')}>Back</Button>}>{error.message}</Alert>;
@@ -64,6 +92,8 @@ export default function EnterpriseReview() {
     setBusy(true);
     try { await (confirm === 'suspend' ? platformService.suspend(id) : platformService.reactivate(id)); toast.success(confirm === 'suspend' ? 'Suspended. Sending stops at once.' : 'Reactivated.'); setConfirm(null); reload(); } catch (err) { toast.error(err.message); } finally { setBusy(false); }
   };
+  const docs = data.documents || [];
+  const allVerified = docs.length > 0 && docs.every((d) => d.status === 'verified');
   const value = (k) => { const v = profile[k]; return Array.isArray(v) ? v.join(', ') : v; };
 
   return (
@@ -75,10 +105,10 @@ export default function EnterpriseReview() {
 
       {e.status === 'review' && (
         <Alert severity="info" sx={{ mb: 2 }} action={<Box sx={{ display: 'flex', gap: 1 }}>
-          <Button size="small" color="success" variant="contained" onClick={() => setDecision('approve')}>Approve</Button>
+          <Button size="small" color="success" variant="contained" disabled={!allVerified} onClick={() => setDecision('approve')}>Approve</Button>
           <Button size="small" color="warning" variant="outlined" onClick={() => setDecision('request_changes')}>Request changes</Button>
           <Button size="small" color="error" variant="outlined" onClick={() => setDecision('reject')}>Reject</Button></Box>}>
-          Waiting for your decision. Check the details below before approving.
+          Waiting for your decision. {allVerified ? 'All KYC documents are verified.' : `Verify every KYC document below before approving (${docs.filter((d) => d.status === 'verified').length}/${docs.length} verified).`}
         </Alert>
       )}
       {e.reviewNote && ['changes', 'rejected'].includes(e.status) && <Alert severity={e.status === 'rejected' ? 'error' : 'warning'} sx={{ mb: 2 }}><b>Your last note:</b> {e.reviewNote}</Alert>}
@@ -104,6 +134,10 @@ export default function EnterpriseReview() {
         </AppSectionCard>
       ))}
 
+      <AppSectionCard title="KYC documents" subtitle="Open each file, then verify it or reject it with a reason. Approval needs all five verified.">
+        {docs.length ? <DocumentList docs={docs} admin onView={(d) => openBlob(() => platformService.documentFile(id, d.type)).catch((err) => toast.error(err.message || 'Could not open the file.'))} onReview={(doc, decision) => setDocReview({ doc, decision })} /> : <Typography color="text.secondary">No documents.</Typography>}
+      </AppSectionCard>
+      <DocDialog id={id} target={docReview} onClose={() => setDocReview(null)} onDone={reload} />
       <DecisionDialog id={id} decision={decision} onClose={() => setDecision(null)} onDone={reload} />
       <AppConfirmDialog open={!!confirm} danger={confirm === 'suspend'} busy={busy} title={confirm === 'suspend' ? `Suspend ${e.name}?` : `Reactivate ${e.name}?`}
         confirmLabel={confirm === 'suspend' ? 'Suspend' : 'Reactivate'}

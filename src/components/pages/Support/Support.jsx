@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Button, Tab, Tabs } from '@mui/material';
+import { Alert, Avatar, Box, Button, Chip, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, CustomPagination } from '../../common';
 import { useApi, useAppContext } from '../../../hooks';
 import { supportService } from '../../../services';
 import NewTicketDialog from './NewTicketDialog';
-import { PriorityChip, categoryLabel, ago } from './ticketUi';
+import { PriorityChip, DueChip, categoryLabel, ago } from './ticketUi';
 
 const TABS = [['', 'All'], ['pending', 'Pending'], ['resolved', 'Resolved'], ['closed', 'Closed']];
 
@@ -17,6 +17,7 @@ export default function Support() {
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const sum = useApi(() => supportService.summaryMine(), []);
+  const team = useApi(() => supportService.myTeam(), []);
   const list = useApi(() => supportService.listMine({ page, limit: 20, ...(tab === 'pending' ? { group: 'pending' } : tab ? { status: tab } : {}) }), [tab, page]);
   const s = sum.data || {};
 
@@ -30,6 +31,14 @@ export default function Support() {
         <AppMetricCard label="Resolved" value={s.resolved ?? '–'} tone="good" />
         <AppMetricCard label="Closed" value={s.closed ?? '–'} />
       </Box>
+      <Paper variant="outlined" sx={{ p: 2, mb: 2.5, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ flex: '1 1 220px' }}>
+          <Typography variant="h3">Your support team</Typography>
+          <Typography variant="caption" color="text.secondary">{team.data && team.data.length ? 'Your tickets go to these RelayOne agents first. Escalated tickets move to a senior agent.' : 'No dedicated agents yet. Your tickets are picked up by the RelayOne support desk.'}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>{(team.data || []).map((m) => <Chip key={m.id} avatar={<Avatar>{m.name.slice(0, 1)}</Avatar>} label={m.name + (m.isSenior ? ' · Senior' : '')} variant="outlined" />)}</Box>
+      </Paper>
+      <Typography color="text.secondary" sx={{ mb: 1.5, fontSize: 12 }}>Target resolution: Critical 4 h, High 8 h, Medium 24 h, Low 72 h.</Typography>
       <Tabs value={tab} onChange={(e, v) => { setTab(v); setPage(1); }} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
         {TABS.map(([v, l]) => <Tab key={v} value={v} label={l} sx={{ textTransform: 'none', minHeight: 42 }} />)}
       </Tabs>
@@ -42,6 +51,7 @@ export default function Support() {
           { key: 'category', label: 'Category', render: (t) => categoryLabel(t.category) },
           { key: 'priority', label: 'Priority', render: (t) => <PriorityChip priority={t.priority} /> },
           { key: 'status', label: 'Status', render: (t) => <AppStatusChip status={t.status} /> },
+          { key: 'dueAt', label: 'Resolve by', render: (t) => <DueChip ticket={t} /> },
           { key: 'lastActivityAt', label: 'Last update', render: (t) => ago(t.lastActivityAt) }
         ]} />
       <CustomPagination meta={list.meta} onPage={setPage} />

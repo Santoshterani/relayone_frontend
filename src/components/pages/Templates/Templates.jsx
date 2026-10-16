@@ -33,7 +33,14 @@ export default function Templates() {
         columns={[
           { key: 'id', label: 'Id', width: 70, render: (t) => <span className="mono">{t.id}</span> },
           { key: 'name', label: 'Name', render: (t) => <b>{t.name}</b> },
-          { key: 'channel', label: 'Channel', render: (t) => <Chip size="small" variant="outlined" label={t.channel === 'email' ? 'Email' : 'In-app'} /> },
+          { key: 'channel', label: 'Channel', render: (t) => (
+            <>
+              <Chip size="small" variant="outlined" label={t.channel === 'email' ? 'Email' : 'In-app'} />
+              {t.channel === 'email' && t.variants.email.mode !== 'plain' && <Chip size="small" color="primary" sx={{ ml: 0.5 }} label={t.variants.email.mode === 'builder' ? 'Designed' : 'HTML'} />}
+              {t.variants.whatsapp.body && <Chip size="small" variant="outlined" sx={{ ml: 0.5 }} label="WhatsApp" />}
+              {t.variants.telegram.body && <Chip size="small" variant="outlined" sx={{ ml: 0.5 }} label="Telegram" />}
+            </>
+          ) },
           { key: 'subject', label: 'Subject / title', render: (t) => t.subject || '–' },
           { key: 'ph', label: 'Placeholders', render: (t) => (t.placeholders.length ? t.placeholders.map((p) => <span key={p.key} className="mono" style={{ marginRight: 6 }}>{`{${p.key}}`}</span>) : '–') },
           { key: 'updatedAt', label: 'Updated', render: (t) => dateTime(t.updatedAt) },

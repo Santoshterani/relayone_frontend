@@ -32,6 +32,10 @@ export default function AppShell() {
           </ListItemButton>
         ))}
       </List>
+      <Box sx={{ px: 2.5, py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>Developed by Santosh Terani</Typography>
+        <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>RelayOne © {new Date().getFullYear()}. All rights reserved.</Typography>
+      </Box>
     </Box>
   );
 

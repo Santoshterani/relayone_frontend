@@ -6,3 +6,5 @@ export const createTemplate = (body) => post(TEMPLATES, body);
 export const updateTemplate = (id, body) => put(`${TEMPLATES}/${id}`, body);
 export const savePlaceholders = (id, placeholders) => put(`${TEMPLATES}/${id}/placeholders`, { placeholders });
 export const deleteTemplate = (id) => del(`${TEMPLATES}/${id}`);
+export const getCatalog = () => get(`${TEMPLATES}/catalog`);
+export const renderDraft = (body) => post(`${TEMPLATES}/render`, body);

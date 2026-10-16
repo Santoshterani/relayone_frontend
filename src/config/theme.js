@@ -1,7 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 
-const font = '"Poppins", system-ui, -apple-system, "Segoe UI", sans-serif';
-export const colors = { navy: '#12285E', navySoft: '#E8EDF9', cta: '#F59E0B', ctaInk: '#1B1300', good: '#137A4B', warn: '#A25A00', bad: '#C42B3A', line: '#E3E7F1', muted: '#667391', bg: '#F4F6FB' };
+const font = '"Poppins", system-ui, sans-serif';
+export const colors = { navy: '#12285E', navySoft: '#E8EDF9', cta: '#F59E0B', ctaInk: '#1B1300', good: '#137A4B', warn: '#A25A00', bad: '#C42B3A', line: '#E3E7F1', muted: '#667391', bg: '#FAFAFA' };
 
 export default createTheme({
   palette: {

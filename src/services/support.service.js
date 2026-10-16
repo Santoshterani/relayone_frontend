@@ -3,6 +3,7 @@ import { TICKETS, SUPPORT } from '../constants';
 // Enterprise side
 export const listMine = (params) => get(TICKETS, params);
 export const summaryMine = () => get(`${TICKETS}/summary`);
+export const myTeam = () => get(`${TICKETS}/team`);
 export const create = (body) => post(TICKETS, body);
 export const getMine = (id) => get(`${TICKETS}/${id}`);
 export const replyMine = (id, body) => post(`${TICKETS}/${id}/reply`, { body });

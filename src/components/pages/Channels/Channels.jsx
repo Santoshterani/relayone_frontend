@@ -5,14 +5,9 @@ import { AppPageHeader, AppSectionCard, AppSkeletonLoader, AppStatusChip, AppCon
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { channelService } from '../../../services';
 import { dateTime } from '../../../utils/format';
+import { PROVIDERS as PRESETS } from './smtpGuides';
+import SmtpGuide from './SmtpGuide';
 
-const PRESETS = {
-  gmail: { label: 'Gmail / Google Workspace', host: 'smtp.gmail.com', port: 587, encryption: 'starttls' },
-  m365: { label: 'Microsoft 365', host: 'smtp.office365.com', port: 587, encryption: 'starttls' },
-  ses: { label: 'Amazon SES', host: 'email-smtp.us-east-1.amazonaws.com', port: 587, encryption: 'starttls' },
-  sendgrid: { label: 'SendGrid', host: 'smtp.sendgrid.net', port: 587, encryption: 'starttls', username: 'apikey' },
-  custom: { label: 'Other SMTP server' }
-};
 const empty = { provider: 'custom', host: '', port: 587, encryption: 'starttls', username: '', password: '', fromName: '', fromEmail: '', replyTo: '', dailyLimit: 2000 };
 
 function EmailCard({ data, canWrite, onChanged }) {
@@ -31,7 +26,7 @@ function EmailCard({ data, canWrite, onChanged }) {
   }, [sender]);
 
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrors((s) => ({ ...s, [k]: undefined })); };
-  const pick = (e) => { const key = e.target.value; const p = PRESETS[key]; setForm((f) => ({ ...f, provider: key, ...(p.host ? { host: p.host, port: p.port, encryption: p.encryption } : {}), ...(p.username ? { username: p.username } : {}) })); };
+  const pick = (e) => { const key = e.target.value; const p = PRESETS[key]; setForm((f) => ({ ...f, provider: key, ...(p.host ? { host: p.host, port: p.port, encryption: p.encryption } : {}), ...(p.username ? { username: p.username } : (PRESETS[f.provider] && PRESETS[f.provider].username && PRESETS[f.provider].username === f.username ? { username: '' } : {})) })); };
   const field = (k, label, props = {}) => <TextField label={label} value={form[k] ?? ''} onChange={set(k)} error={!!errors[k]} helperText={errors[k]} disabled={!canWrite} {...props} />;
 
   const run = async (name, fn, okText) => {
@@ -82,13 +77,14 @@ function EmailCard({ data, canWrite, onChanged }) {
           <Grid size={{ xs: 12, md: 6 }}>{field('host', 'SMTP host', { placeholder: 'smtp.example.com' })}</Grid>
           <Grid size={{ xs: 6, md: 3 }}>{field('port', 'Port', { type: 'number' })}</Grid>
           <Grid size={{ xs: 6, md: 3 }}><TextField select label="Encryption" value={form.encryption} onChange={set('encryption')} disabled={!canWrite}><MenuItem value="starttls">STARTTLS (587)</MenuItem><MenuItem value="ssl">SSL/TLS (465)</MenuItem><MenuItem value="none">None</MenuItem></TextField></Grid>
-          <Grid size={{ xs: 12, md: 3 }}>{field('username', 'Username', { autoComplete: 'off' })}</Grid>
-          <Grid size={{ xs: 12, md: 3 }}>{field('password', 'Password', { type: 'password', autoComplete: 'new-password', placeholder: sender ? 'Unchanged' : '', helperText: errors.password || (sender ? 'Leave empty to keep the saved password. It is stored encrypted and never shown.' : 'Stored encrypted.') })}</Grid>
+          <Grid size={{ xs: 12, md: 6 }}>{field('username', 'Username', { autoComplete: 'off', helperText: errors.username || (PRESETS[form.provider] || PRESETS.custom).usernameHelp })}</Grid>
+          <Grid size={{ xs: 12, md: 6 }}>{field('password', 'Password', { type: 'password', autoComplete: 'new-password', placeholder: sender ? 'Unchanged' : '', helperText: errors.password || (sender ? 'Leave empty to keep the saved password. It is stored encrypted and never shown.' : (PRESETS[form.provider] || PRESETS.custom).passwordHelp) })}</Grid>
           <Grid size={{ xs: 12, md: 4 }}>{field('fromName', 'From name')}</Grid>
           <Grid size={{ xs: 12, md: 4 }}>{field('fromEmail', 'From email', { type: 'email' })}</Grid>
           <Grid size={{ xs: 12, md: 4 }}>{field('replyTo', 'Reply-to (optional)', { type: 'email' })}</Grid>
           <Grid size={{ xs: 12, md: 4 }}>{field('dailyLimit', 'Daily sending limit', { type: 'number', helperText: errors.dailyLimit || 'Match your provider\'s limit. Extra emails wait in the queue. Empty = no limit.' })}</Grid>
         </Grid>
+        <SmtpGuide guide={(PRESETS[form.provider] || PRESETS.custom).guide} />
         {canWrite && (
           <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
             <Button type="submit" variant="contained" disabled={!!busy}>{sender ? 'Save changes' : 'Save sender'}</Button>

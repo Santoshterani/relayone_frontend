@@ -7,7 +7,7 @@ import Main from './components/Main';
 /** Root: context providers around the main view. */
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
       <ToastProvider>
         <SessionProvider>
           <Main />
