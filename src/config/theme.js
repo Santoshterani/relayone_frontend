@@ -14,6 +14,11 @@ export default createTheme({
   components: {
     MuiButton: { defaultProps: { disableElevation: true } },
     MuiTextField: { defaultProps: { size: 'small', fullWidth: true } },
+    MuiOutlinedInput: { styleOverrides: {
+      root: { backgroundColor: '#F7F8FC', borderRadius: 10, fontSize: 13, '& fieldset': { borderColor: colors.line }, '&:hover fieldset': { borderColor: '#C9D0E3' }, '&.Mui-focused': { backgroundColor: '#fff' }, '&.Mui-disabled': { backgroundColor: '#F1F3F9' } },
+      input: { paddingTop: 10.5, paddingBottom: 10.5 }, inputMultiline: { padding: 0 }
+    } },
+    MuiFormHelperText: { styleOverrides: { root: { marginLeft: 2, marginRight: 2, fontSize: 11.5 } } },
     MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
     MuiTableCell: { styleOverrides: { head: { fontWeight: 600, color: colors.muted, fontSize: 12 } } }
   }

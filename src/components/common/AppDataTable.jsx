@@ -4,7 +4,7 @@ import AppSkeletonLoader from './AppSkeletonLoader';
 import AppEmptyState from './AppEmptyState';
 
 /** columns = [{ key, label, render?(row), align?, width? }]. */
-export default function AppDataTable({ columns, rows, loading, rowKey = 'id', onRowClick, empty }) {
+export default function AppDataTable({ columns, rows, loading, rowKey = 'id', onRowClick, empty, selectedId }) {
   if (loading) return <AppSkeletonLoader variant="table" />;
   if (!rows || !rows.length) return <AppEmptyState title={(empty && empty.title) || 'Nothing here yet'} message={empty && empty.message} action={empty && empty.action} />;
   return (
@@ -13,7 +13,7 @@ export default function AppDataTable({ columns, rows, loading, rowKey = 'id', on
         <TableHead><TableRow>{columns.map((c) => <TableCell key={c.key} align={c.align} sx={{ width: c.width }}>{c.label}</TableCell>)}</TableRow></TableHead>
         <TableBody>
           {rows.map((r) => (
-            <TableRow key={r[rowKey]} hover={!!onRowClick} onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
+            <TableRow key={r[rowKey]} hover={!!onRowClick} selected={selectedId !== undefined && r[rowKey] === selectedId} onClick={onRowClick ? () => onRowClick(r) : undefined} sx={{ cursor: onRowClick ? 'pointer' : 'default' }}>
               {columns.map((c) => <TableCell key={c.key} align={c.align}>{c.render ? c.render(r) : r[c.key]}</TableCell>)}
             </TableRow>
           ))}

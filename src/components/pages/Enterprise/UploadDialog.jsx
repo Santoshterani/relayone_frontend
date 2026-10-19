@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import AppTextField from '../../common/AppTextField';
 import { useToast } from '../../../hooks';
 import { enterpriseService } from '../../../services';
 import { readBase64 } from '../../../utils/openFile';
@@ -44,10 +46,10 @@ export default function UploadDialog({ doc, onClose, onUploaded }) {
               <Typography variant="caption" color="text.secondary">{file ? fileSize(file.size) : 'PDF, JPG or PNG, up to 10 MB'}</Typography>
               <input ref={input} type="file" hidden accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/png,image/jpeg" aria-label="Document file" onChange={(e) => pick(e.target.files[0])} />
             </Box>
-            <TextField label="Expiry date (optional)" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} InputLabelProps={{ shrink: true }} />
-            <TextField label="Notes for the reviewer (optional)" multiline minRows={2} value={notes} onChange={(e) => setNotes(e.target.value)} inputProps={{ maxLength: 500 }} />
+            <AppTextField label="Expiry date (optional)" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} InputLabelProps={{ shrink: true }} />
+            <AppTextField label="Notes for the reviewer (optional)" multiline minRows={2} value={notes} onChange={(e) => setNotes(e.target.value)} inputProps={{ maxLength: 500 }} />
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button variant="contained" onClick={submit} disabled={busy || !file}>Submit document</Button></DialogActions>
+          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<UploadFileOutlinedIcon />} onClick={submit} disabled={busy || !file}>Submit document</Button></DialogActions>
         </>
       )}
     </Dialog>

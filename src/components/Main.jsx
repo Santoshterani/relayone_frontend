@@ -14,7 +14,6 @@ import Webhooks from './pages/Webhooks/Webhooks';
 import Wallet from './pages/Wallet/Wallet';
 import Team from './pages/Team/Team';
 import Platform from './pages/Platform/Platform';
-import EnterpriseReview from './pages/Platform/EnterpriseReview';
 import Plans from './pages/Platform/Plans';
 import Overview from './pages/Platform/Overview';
 import Support from './pages/Support/Support';
@@ -68,11 +67,10 @@ export default function Main() {
       <Route element={<Guarded><AppShell /></Guarded>}>
         {NAV.map((n) => {
           const Page = PAGES[n.path];
-          return <Route key={n.path} path={n.path} element={<Gate permission={n.permission}>{Page ? <Page /> : <ComingSoon title={n.label} />}</Gate>} />;
+          return <Route key={n.path} path={n.path === '/platform' ? '/platform/*' : n.path} element={<Gate permission={n.permission}>{Page ? <Page /> : <ComingSoon title={n.label} />}</Gate>} />;
         })}
         <Route path="/support/:id" element={<Gate permission="tickets.read"><TicketView staff={false} /></Gate>} />
         <Route path="/desk/:id" element={<Gate permission="support.view"><TicketView staff /></Gate>} />
-        <Route path="/platform/:id" element={<Gate permission="platform.manage"><EnterpriseReview /></Gate>} />
         <Route path="/templates/new" element={<Gate permission="templates.write"><TemplateEditor /></Gate>} />
         <Route path="/templates/:id" element={<Gate permission="templates.read"><TemplateEditor /></Gate>} />
       </Route>

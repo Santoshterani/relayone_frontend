@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { TextField, Alert, Link, Box, Typography } from '@mui/material';
+import { Alert, Link, Box, Typography } from '@mui/material';
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined';
+import AppTextField from '../../common/AppTextField';
 import AuthLayout from './AuthLayout';
 import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
@@ -35,9 +37,9 @@ export default function AcceptInvite() {
       <Typography color="text.secondary" sx={{ mb: 2 }}>{info.email}</Typography>
       <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
         {form.formError && <Alert severity="error">{form.formError}</Alert>}
-        <TextField label="Your name" autoFocus {...form.field('name')} />
+        <AppTextField label="Your name" autoFocus {...form.field('name')} />
         <PasswordField label="Choose a password" autoComplete="new-password" {...form.field('password')} helperText={form.errors.password || 'At least 8 characters with a letter and a number.'} />
-        <AppFormActions submitLabel="Accept and continue" busy={form.busy} align="stretch" color="secondary" />
+        <AppFormActions submitLabel="Accept and continue" submitIcon={<HowToRegOutlinedIcon />} busy={form.busy} align="stretch" color="secondary" />
       </Box>
     </AuthLayout>
   );

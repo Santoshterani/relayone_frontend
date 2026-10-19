@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, FormGroup, MenuItem, Paper, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, FormGroup, MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSkeletonLoader, AppStatusChip, AppConfirmDialog } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
@@ -37,13 +44,13 @@ function Section({ title, subtitle, id, editing, setEditing, canEdit, dirty, bus
     <Paper variant="outlined" sx={{ p: 2.5, mb: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <Box><Typography variant="h3">{title}</Typography>{subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}</Box>
-        {canEdit && !on && <Button size="small" variant="outlined" onClick={() => setEditing(id)} aria-label={`Edit ${title}`}>Edit</Button>}
+        {canEdit && !on && <Button size="small" variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(id)} aria-label={`Edit ${title}`}>Edit</Button>}
       </Box>
       {children(!on)}
       {on && (
         <Box sx={{ mt: 2, p: 1.5, bgcolor: 'background.default', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography variant="caption"><b>{dirty ? 'Unsaved changes' : 'No changes yet'}</b>{dirty ? ' — review your edits before saving' : ''}</Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}><Button size="small" onClick={onCancel} disabled={busy}>Cancel</Button><Button size="small" variant="contained" onClick={onSave} disabled={busy || !dirty}>Save changes</Button></Box>
+          <Box sx={{ display: 'flex', gap: 1 }}><Button size="small" onClick={onCancel} disabled={busy}>Cancel</Button><Button size="small" variant="contained" startIcon={<SaveOutlinedIcon />} onClick={onSave} disabled={busy || !dirty}>Save changes</Button></Box>
         </Box>
       )}
     </Paper>
@@ -79,8 +86,8 @@ export default function EnterpriseProfile() {
     const percent = Math.round(((company ? 1 : 0) + (contact ? 1 : 0) + (legal ? 1 : 0) + (docs.length ? uploaded / docs.length : 0) + (kyc ? 1 : 0)) * 20);
     const st = (done, active) => (done ? 'done' : active ? 'active' : 'pending');
     return { uploaded, percent, steps: [
-      { label: 'Company Info', state: st(company, !company) }, { label: 'Contact Details', state: st(contact, company && !contact) },
-      { label: `Documents (${uploaded}/${docs.length || 5})`, state: st(docsDone, uploaded > 0) }, { label: 'Legal & Tax', state: st(legal, false) },
+      { label: 'Company Info', state: st(company, !company) }, { label: 'Contact Details', state: st(contact, company && !contact) }, { label: 'Legal & Tax', state: st(legal, false) },
+      { label: `Documents (${uploaded}/${docs.length || 5})`, state: st(docsDone, uploaded > 0) },
       { label: 'KYC Approval', state: st(kyc, ent.status === 'review') }] };
   }, [form, ent, docs]);
 
@@ -89,7 +96,7 @@ export default function EnterpriseProfile() {
 
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrors((s) => ({ ...s, [k]: undefined })); };
   const field = (k, label, disabled, props = {}) => (
-    <TextField label={label} required={REQUIRED.includes(k)} value={form[k] || ''} onChange={set(k)} disabled={disabled} error={!!errors[k]} helperText={errors[k]} {...props} />
+    <AppTextField label={label} required={REQUIRED.includes(k)} value={form[k] || ''} onChange={set(k)} disabled={disabled} error={!!errors[k]} helperText={errors[k]} {...props} />
   );
   const select = (k, label, disabled, options) => field(k, label, disabled, { select: true, children: options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>) });
   const saveSection = (id) => async () => {
@@ -122,12 +129,12 @@ export default function EnterpriseProfile() {
         {STATUS_TEXT[ent.status]}{ent.submittedAt && ent.status === 'review' ? ` Submitted ${date(ent.submittedAt)}.` : ''}
         {ent.reviewNote && ['changes', 'rejected'].includes(ent.status) && <Box sx={{ mt: 0.5 }}><b>Note from RelayOne:</b> {ent.reviewNote}</Box>}
       </Alert>
-      {progress && ent.status !== 'active' && <CompletionBar percent={progress.percent} steps={progress.steps} />}
+      {progress && <CompletionBar percent={progress.percent} steps={progress.steps} />}
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab value="company" label="Company Profile" sx={{ textTransform: 'none' }} />
-        <Tab value="legal" label="Legal & Tax" sx={{ textTransform: 'none' }} />
-        <Tab value="docs" sx={{ textTransform: 'none' }} label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>Documents<Box component="span" sx={{ px: 0.75, borderRadius: 10, fontSize: 12, lineHeight: '20px', bgcolor: docsLeft || docsRejected ? 'warning.main' : 'success.main', color: '#fff' }}>{progress ? progress.uploaded : 0}/{docs.length || 5}</Box></Box>} />
+        <Tab value="company" icon={<BusinessOutlinedIcon />} iconPosition="start" label="Company Profile" sx={{ textTransform: 'none' }} />
+        <Tab value="legal" icon={<GavelOutlinedIcon />} iconPosition="start" label="Legal & Tax" sx={{ textTransform: 'none' }} />
+        <Tab value="docs" icon={<FolderOpenOutlinedIcon />} iconPosition="start" sx={{ textTransform: 'none' }} label={<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>Documents<Box component="span" sx={{ px: 0.75, borderRadius: 10, fontSize: 12, lineHeight: '20px', bgcolor: docsLeft || docsRejected ? 'warning.main' : 'success.main', color: '#fff' }}>{progress ? progress.uploaded : 0}/{docs.length || 5}</Box></Box>} />
       </Tabs>
 
       {tab === 'company' && (
@@ -214,7 +221,7 @@ export default function EnterpriseProfile() {
                   </Typography>
                 )}
               </Box>
-              <Button variant="contained" color="secondary" onClick={() => setConfirm(true)} disabled={busy || !ent.canSubmit}>{ent.status === 'changes' ? 'Submit again for review' : 'Submit for review'}</Button>
+              <Button variant="contained" color="secondary" startIcon={<SendOutlinedIcon />} onClick={() => setConfirm(true)} disabled={busy || !ent.canSubmit}>{ent.status === 'changes' ? 'Submit again for review' : 'Submit for review'}</Button>
             </Paper>
           )}
         </>

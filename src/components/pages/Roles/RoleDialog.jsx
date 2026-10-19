@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import { useToast } from '../../../hooks';
 import { roleService } from '../../../services';
 
@@ -72,7 +74,7 @@ export default function RoleDialog({ open, role, catalog, onClose, onSaved }) {
             </TableBody>
           </Table>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>{role ? 'Save role' : 'Create role'}</Button></DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" startIcon={role ? <SaveOutlinedIcon /> : <AddOutlinedIcon />} disabled={busy}>{role ? 'Save role' : 'Create role'}</Button></DialogActions>
       </Box>
     </Dialog>
   );

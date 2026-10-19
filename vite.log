@@ -1,0 +1,9 @@
+
+  VITE v5.4.21  ready in 324 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+4:57:55 AM [vite] hmr update /src/components/common/AppTextField.jsx
+4:59:04 AM [vite] hmr update /src/components/pages/Templates/TemplateEditor.jsx
+4:59:08 AM [vite] hmr update /src/components/pages/Templates/TemplateEditor.jsx
+Killed

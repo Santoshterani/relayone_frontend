@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem } from '@mui/material';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
+import AppTextField from '../../common/AppTextField';
 import { useToast } from '../../../hooks';
 import { supportService } from '../../../services';
 import { CATEGORIES, PRIORITIES } from './ticketUi';
@@ -27,14 +29,14 @@ export default function NewTicketDialog({ open, onClose, onCreated }) {
         <DialogTitle sx={{ fontSize: 16 }}>Raise a support ticket</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           {errors.form && <Alert severity="error">{errors.form}</Alert>}
-          <TextField label="Subject" autoFocus value={f.subject} onChange={set('subject')} error={!!errors.subject} helperText={errors.subject} inputProps={{ maxLength: 200 }} />
+          <AppTextField label="Subject" autoFocus value={f.subject} onChange={set('subject')} error={!!errors.subject} helperText={errors.subject} inputProps={{ maxLength: 200 }} />
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-            <TextField select label="Category" value={f.category} onChange={set('category')}>{CATEGORIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
-            <TextField select label="Priority" value={f.priority} onChange={set('priority')} helperText="Critical is for outages that stop sending. Escalations also become Critical.">{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
+            <AppTextField select label="Category" value={f.category} onChange={set('category')}>{CATEGORIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</AppTextField>
+            <AppTextField select label="Priority" value={f.priority} onChange={set('priority')} helperText="Critical is for outages that stop sending. Escalations also become Critical.">{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</AppTextField>
           </Box>
-          <TextField label="What is happening?" multiline minRows={5} value={f.body} onChange={set('body')} error={!!errors.body} helperText={errors.body || 'Include error messages, message IDs and when it started.'} />
+          <AppTextField label="What is happening?" multiline minRows={5} value={f.body} onChange={set('body')} error={!!errors.body} helperText={errors.body || 'Include error messages, message IDs and when it started.'} />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>Raise ticket</Button></DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy} startIcon={<AddCommentOutlinedIcon />}>Raise ticket</Button></DialogActions>
       </Box>
     </Dialog>
   );

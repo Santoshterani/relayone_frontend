@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Box, Button, MenuItem, Switch, Tab, Tabs, TextField, Typography, Paper, FormControlLabel } from '@mui/material';
+import { Alert, Box, Button, MenuItem, Switch, Tab, Tabs, Typography, Paper, FormControlLabel } from '@mui/material';
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import BrushOutlinedIcon from '@mui/icons-material/BrushOutlined';
+import ChatOutlinedIcon from '@mui/icons-material/ChatOutlined';
+import TelegramIcon from '@mui/icons-material/Telegram';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppSkeletonLoader } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
@@ -46,6 +54,7 @@ export default function TemplateEditor() {
   const m = (k) => meta[k] || { description: '', isRequired: true, defaultValue: '', sampleValue: '' };
   const setM = (k, patch) => setMeta((s) => ({ ...s, [k]: { ...m(k), ...patch } }));
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrors((s) => ({ ...s, [k]: undefined })); };
+  const [showText, setShowText] = useState(false);
   const inapp = form.channel === 'inapp';
   const designed = !inapp && em.mode !== 'plain';
 
@@ -94,32 +103,36 @@ export default function TemplateEditor() {
   return (
     <Box component="form" onSubmit={save} noValidate>
       <AppPageHeader title={isNew ? 'New template' : form.name || 'Template'} subtitle={isNew ? 'Write the message and mark placeholders with {braces}.' : `Template id ${id}. Use it as templateId in the API.`}
-        actions={<><Button onClick={() => navigate('/templates')}>Back</Button>{write && <Button type="submit" variant="contained" disabled={busy}>Save template</Button>}</>} />
+        actions={<><Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate('/templates')}>Back</Button>{write && <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={busy}>Save template</Button>}</>} />
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} aria-label="Template sections">
-        <Tab value="message" label="Message" />
-        {!inapp && <Tab value="design" label={`Email design${em.mode !== 'plain' ? ` (${em.mode === 'builder' ? 'builder' : 'HTML'})` : ''}`} />}
-        <Tab value="whatsapp" label="WhatsApp" />
-        <Tab value="telegram" label="Telegram" />
+        <Tab value="message" icon={inapp ? <ChatOutlinedIcon /> : <EmailOutlinedIcon />} iconPosition="start" label={inapp ? 'Notification' : 'Basics'} />
+        {!inapp && <Tab value="design" icon={<BrushOutlinedIcon />} iconPosition="start" label={`Email design${em.mode !== 'plain' ? ` (${em.mode === 'builder' ? 'builder' : 'HTML'})` : ''}`} />}
+        <Tab value="whatsapp" icon={<ChatOutlinedIcon />} iconPosition="start" label="WhatsApp" />
+        <Tab value="telegram" icon={<TelegramIcon />} iconPosition="start" label="Telegram" />
       </Tabs>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: tab === 'design' ? 12 : 7 }}>
           {tab === 'message' && (
-          <AppSectionCard title="Message" subtitle={designed ? 'The plain-text version. For a designed email it is only used as the text part, and can stay empty.' : undefined}>
+          <AppSectionCard title={inapp ? 'Notification' : 'Basics'} subtitle={inapp ? 'What the user sees in the bell inside your app: a short title and a line of text.' : designed ? 'Name and channel. The subject and layout are on the Email design tab.' : 'Name, subject and body of a plain-text email. Choose Email design for a coloured layout.'}>
             <Box sx={{ display: 'grid', gap: 2 }}>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 8 }}><TextField label="Template name" {...field('name')} /></Grid>
-                <Grid size={{ xs: 12, sm: 4 }}><TextField select label="Channel" value={form.channel} onChange={set('channel')} disabled={!isNew} helperText={isNew ? undefined : 'Cannot change later'}>
-                  <MenuItem value="email">Email</MenuItem><MenuItem value="inapp">In-app</MenuItem></TextField></Grid>
+                <Grid size={{ xs: 12, sm: 8 }}><AppTextField label="Template name" required {...field('name')} /></Grid>
+                <Grid size={{ xs: 12, sm: 4 }}><AppTextField select label="Channel" required value={form.channel} onChange={set('channel')} disabled={!isNew} helperText={isNew ? undefined : 'Cannot change later'}>
+                  <MenuItem value="email">Email</MenuItem><MenuItem value="inapp">In-app</MenuItem></AppTextField></Grid>
               </Grid>
-              <TextField label={inapp ? 'Notification title' : 'Email subject'} {...field('subject')} />
-              <TextField label={inapp ? 'Notification text' : designed ? 'Plain-text version (optional)' : 'Email body'} multiline minRows={7} {...field('body')} slotProps={{ htmlInput: { className: 'mono', style: { fontSize: 13 } } }}
-                helperText={errors.body || 'Use {name}, {order_id}… Letters, numbers and underscore only.'} />
+              {!designed && <AppTextField label={inapp ? 'Notification title' : 'Email subject'} required {...field('subject')} />}
+              {!designed && <AppTextField label={inapp ? 'Notification text' : 'Email body'} required={inapp} multiline minRows={7} {...field('body')} slotProps={{ htmlInput: { className: 'mono', style: { fontSize: 13 } } }}
+                helperText={errors.body || (inapp ? 'Shown in the bell. Use {name}, {order_id}… Letters, numbers and underscore only.' : 'Use {name}, {order_id}… Letters, numbers and underscore only.')} />}
+              {designed && (showText
+                ? <AppTextField label="Text version (optional)" multiline minRows={5} {...field('body')} slotProps={{ htmlInput: { className: 'mono', style: { fontSize: 13 } } }} helperText="Used by mail apps that cannot show the design. Leave empty and one is made from the design." />
+                : <Box><Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => setShowText(true)}>Edit text version</Button><Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>Made automatically from the design for mail apps that cannot show it.</Typography></Box>)}
             </Box>
           </AppSectionCard>
           )}
           {tab === 'design' && (
             <AppSectionCard title="Email design" subtitle="Colours, layout and buttons for HTML email. Industry layouts (e-commerce, fintech…) are one click away.">
               {errors.design && <Alert severity="error" sx={{ mb: 2 }}>{errors.design}</Alert>}
+              {designed && <Box sx={{ mb: 2 }}><AppTextField label="Email subject" required {...field('subject')} /></Box>}
               <EmailDesigner value={em} onChange={(email) => { setVariants((s) => ({ ...s, email })); setErrors((s) => ({ ...s, design: undefined })); }} disabled={!write}
                 subject={form.subject} body={form.body} sampleValues={filled} catalog={catalog.data}
                 onSample={({ subject, samples }) => { if (!form.subject.trim()) setForm((f) => ({ ...f, subject })); setMeta((s) => ({ ...s, ...Object.fromEntries(Object.entries(samples).map(([k, v]) => [k, { ...(s[k] || { description: '', isRequired: true, defaultValue: '' }), sampleValue: s[k] && s[k].sampleValue ? s[k].sampleValue : v }])) })); }} />
@@ -140,9 +153,9 @@ export default function TemplateEditor() {
                         control={<Switch size="small" checked={m(k).isRequired} onChange={(e) => setM(k, { isRequired: e.target.checked })} disabled={!write} inputProps={{ 'aria-label': `${k} required` }} />} />
                     </Box>
                     <Grid container spacing={1.5}>
-                      <Grid size={12}><TextField label="Description" value={m(k).description} onChange={(e) => setM(k, { description: e.target.value })} placeholder="What goes here?" disabled={!write} inputProps={{ 'aria-label': `Description of ${k}` }} /></Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}><TextField label="Default value" value={m(k).defaultValue} onChange={(e) => setM(k, { defaultValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Default of ${k}` }} /></Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}><TextField label="Sample (preview only)" value={m(k).sampleValue} onChange={(e) => setM(k, { sampleValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Sample of ${k}` }} /></Grid>
+                      <Grid size={12}><AppTextField label="Description" value={m(k).description} onChange={(e) => setM(k, { description: e.target.value })} placeholder="What goes here?" disabled={!write} inputProps={{ 'aria-label': `Description of ${k}` }} /></Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}><AppTextField label="Default value" value={m(k).defaultValue} onChange={(e) => setM(k, { defaultValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Default of ${k}` }} /></Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}><AppTextField label="Sample (preview only)" value={m(k).sampleValue} onChange={(e) => setM(k, { sampleValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Sample of ${k}` }} /></Grid>
                     </Grid>
                   </Paper>
                 ))}

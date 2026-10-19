@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Avatar, Box, Button, Chip, Paper, Tab, Tabs, Typography } from '@mui/material';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, CustomPagination } from '../../common';
 import { useApi, useAppContext } from '../../../hooks';
 import { supportService } from '../../../services';
@@ -15,16 +20,17 @@ export default function Support() {
   const { can } = useAppContext();
   const [tab, setTab] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [open, setOpen] = useState(false);
   const sum = useApi(() => supportService.summaryMine(), []);
   const team = useApi(() => supportService.myTeam(), []);
-  const list = useApi(() => supportService.listMine({ page, limit: 20, ...(tab === 'pending' ? { group: 'pending' } : tab ? { status: tab } : {}) }), [tab, page]);
+  const list = useApi(() => supportService.listMine({ page, limit, ...(tab === 'pending' ? { group: 'pending' } : tab ? { status: tab } : {}) }), [tab, page, limit]);
   const s = sum.data || {};
 
   return (
     <>
       <AppPageHeader title="Support" subtitle="Server down, messages not arriving, billing question? Raise a ticket and the RelayOne support team will reply here."
-        actions={can('tickets.write') && <Button variant="contained" onClick={() => setOpen(true)}>Raise ticket</Button>} />
+        actions={can('tickets.write') && <Button variant="contained" startIcon={<AddCommentOutlinedIcon />} onClick={() => setOpen(true)}>Raise ticket</Button>} />
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.5, mb: 2.5 }}>
         <AppMetricCard label="Pending" value={s.pending ?? '–'} hint="Open, in progress or escalated" tone={s.pending ? 'warn' : undefined} />
         <AppMetricCard label="In progress" value={s.inProgress ?? '–'} />
@@ -40,7 +46,7 @@ export default function Support() {
       </Paper>
       <Typography color="text.secondary" sx={{ mb: 1.5, fontSize: 12 }}>Target resolution: Critical 4 h, High 8 h, Medium 24 h, Low 72 h.</Typography>
       <Tabs value={tab} onChange={(e, v) => { setTab(v); setPage(1); }} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        {TABS.map(([v, l]) => <Tab key={v} value={v} label={l} sx={{ textTransform: 'none', minHeight: 42 }} />)}
+        {TABS.map(([v, l]) => <Tab key={v} value={v} icon={v === 'pending' ? <PendingActionsOutlinedIcon /> : v === 'resolved' ? <TaskAltOutlinedIcon /> : v === 'closed' ? <LockOutlinedIcon /> : <ListAltOutlinedIcon />} iconPosition="start" label={l} sx={{ textTransform: 'none', minHeight: 42 }} />)}
       </Tabs>
       {list.error && <Alert severity="error" sx={{ mb: 2 }}>{list.error.message}</Alert>}
       <AppDataTable loading={list.loading && !list.data} rows={list.data} onRowClick={(t) => navigate(`/support/${t.id}`)}
@@ -54,7 +60,14 @@ export default function Support() {
           { key: 'dueAt', label: 'Resolve by', render: (t) => <DueChip ticket={t} /> },
           { key: 'lastActivityAt', label: 'Last update', render: (t) => ago(t.lastActivityAt) }
         ]} />
-      <CustomPagination meta={list.meta} onPage={setPage} />
+      {list.meta && list.meta.total > 0 && <CustomPagination
+        page={list.meta.page}
+        totalPages={list.meta.pages}
+        totalCount={list.meta.total}
+        pageSize={list.meta.limit}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+      />}
       <NewTicketDialog open={open} onClose={() => setOpen(false)} onCreated={(t) => navigate(`/support/${t.id}`)} />
     </>
   );

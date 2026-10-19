@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Chip, InputAdornment, Paper, TextField, Typography } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Alert, Box, Chip, InputAdornment, Paper, Typography } from '@mui/material';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppDataTable, AppStatusChip, CustomPagination } from '../../common';
 import { useApi } from '../../../hooks';
 import { platformService } from '../../../services';
 import { date, money } from '../../../utils/format';
+import EnterpriseDrawer from './EnterpriseReview';
 
 const PILLS = [['', 'All'], ['review', 'Awaiting review'], ['sandbox', 'Sandbox'], ['changes', 'Changes needed'], ['active', 'Active'], ['suspended', 'Suspended'], ['rejected', 'Rejected']];
 const CARDS = [
@@ -18,11 +21,14 @@ const CARDS = [
 /** Super Admin: every enterprise on the platform. Review requests come first. */
 export default function Platform() {
   const navigate = useNavigate();
+  const splat = useParams()['*'] || '';
+  const openId = /^\d+$/.test(splat) ? splat : null;
   const [status, setStatus] = useState('review');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const overview = useApi(() => platformService.overview(), []);
-  const list = useApi(() => platformService.listEnterprises({ page, limit: 20, ...(status ? { status } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [status, page, q]);
+  const list = useApi(() => platformService.listEnterprises({ page, limit, ...(status ? { status } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [status, page, limit, q]);
   const counts = (overview.data && overview.data.counts) || {};
   const total = overview.data ? overview.data.total : 0;
   const pick = (v) => { setStatus(v); setPage(1); };
@@ -39,14 +45,14 @@ export default function Platform() {
         ))}
       </Box>
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
-        <TextField placeholder="Search enterprise, contact…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} sx={{ width: { xs: '100%', sm: 300 } }} inputProps={{ 'aria-label': 'Search enterprises' }}
-          InputProps={{ startAdornment: <InputAdornment position="start">🔍</InputAdornment> }} />
+        <AppTextField placeholder="Search enterprise, contact…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} sx={{ width: { xs: '100%', sm: 300 } }} inputProps={{ 'aria-label': 'Search enterprises' }}
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon /></InputAdornment> }} />
         <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
           {PILLS.map(([v, label]) => <Chip key={v} label={label} clickable onClick={() => pick(v)} color={status === v ? 'primary' : 'default'} variant={status === v ? 'filled' : 'outlined'} size="small" sx={{ fontWeight: 500 }} />)}
         </Box>
       </Box>
       {list.error && <Alert severity="error" sx={{ mb: 2 }}>{list.error.message}</Alert>}
-      <AppDataTable loading={list.loading && !list.data} rows={list.data} onRowClick={(e) => navigate(`/platform/${e.id}`)}
+      <AppDataTable loading={list.loading && !list.data} rows={list.data} onRowClick={(e) => navigate(`/platform/${e.id}`)} selectedId={openId ? Number(openId) : undefined}
         empty={{ title: q ? 'No enterprise matches your search' : status === 'review' ? 'Nothing waiting for review' : 'No enterprises here', message: !q && status === 'review' ? 'New applications appear here when an enterprise submits its profile.' : undefined }}
         columns={[
           { key: 'name', label: 'Enterprise', render: (e) => <Box><b>{e.name}</b><Box component="span" sx={{ display: 'block', fontSize: 12, color: 'text.secondary' }}>{e.contactName ? `${e.contactName} · ${e.contactEmail}` : '–'}</Box></Box> },
@@ -58,7 +64,15 @@ export default function Platform() {
           { key: 'balance', label: 'Balance', align: 'right', render: (e) => money(e.balance) },
           { key: 'submittedAt', label: 'Submitted', render: (e) => (e.submittedAt ? date(e.submittedAt) : '–') }
         ]} />
-      <CustomPagination meta={list.meta} onPage={setPage} />
+      {list.meta && list.meta.total > 0 && <CustomPagination
+        page={list.meta.page}
+        totalPages={list.meta.pages}
+        totalCount={list.meta.total}
+        pageSize={list.meta.limit}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+      />}
+      <EnterpriseDrawer id={openId} onClose={() => navigate('/platform')} onChanged={() => { list.reload(); overview.reload(); }} />
     </>
   );
 }

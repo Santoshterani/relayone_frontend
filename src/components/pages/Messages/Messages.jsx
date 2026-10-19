@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, MenuItem, TextField } from '@mui/material';
+import { Alert, Box, Button, MenuItem } from '@mui/material';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppDataTable, AppStatusChip, CustomPagination } from '../../common';
 import MessageDrawer from './MessageDrawer';
 import SendTestDialog from './SendTestDialog';
@@ -31,12 +34,12 @@ export default function Messages() {
   return (
     <>
       <AppPageHeader title="Message logs" subtitle="Every message sent through your API keys or this portal."
-        actions={<>{<Button onClick={reload}>Refresh</Button>}{can('messages.send') && <Button variant="contained" onClick={() => setSending(true)}>Send test message</Button>}</>} />
+        actions={<><Button onClick={reload} startIcon={<RefreshOutlinedIcon />}>Refresh</Button>{can('messages.send') && <Button variant="contained" onClick={() => setSending(true)} startIcon={<SendOutlinedIcon />}>Send test message</Button>}</>} />
       <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
-        <TextField label="Search recipient, id or subject" value={search} onChange={(e) => { setSearch(e.target.value); applySearch(e.target.value); }} sx={{ maxWidth: 320 }} />
-        <TextField select label="Status" value={filters.status} onChange={setFilter('status')} sx={{ width: 150 }}>
-          <MenuItem value="">All</MenuItem>{['queued', 'sent', 'delivered', 'failed'].map((s) => <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>{s}</MenuItem>)}</TextField>
-        <TextField select label="Channel" value={filters.channel} onChange={setFilter('channel')} sx={{ width: 150 }}><MenuItem value="">All</MenuItem><MenuItem value="email">Email</MenuItem><MenuItem value="inapp">In-app</MenuItem></TextField>
+        <AppTextField label="Search recipient, id or subject" value={search} onChange={(e) => { setSearch(e.target.value); applySearch(e.target.value); }} sx={{ maxWidth: 320 }} />
+        <AppTextField select label="Status" value={filters.status} onChange={setFilter('status')} SelectProps={{ displayEmpty: true }} sx={{ width: 150 }}>
+          <MenuItem value="">All</MenuItem>{['queued', 'sent', 'delivered', 'failed'].map((s) => <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>{s}</MenuItem>)}</AppTextField>
+        <AppTextField select label="Channel" value={filters.channel} onChange={setFilter('channel')} SelectProps={{ displayEmpty: true }} sx={{ width: 150 }}><MenuItem value="">All</MenuItem><MenuItem value="email">Email</MenuItem><MenuItem value="inapp">In-app</MenuItem></AppTextField>
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
       <AppDataTable loading={loading && !data} rows={data} onRowClick={(m) => setOpen(m.id)}
@@ -49,7 +52,14 @@ export default function Messages() {
           { key: 'status', label: 'Status', render: (m) => <AppStatusChip status={m.status} /> },
           { key: 'cost', label: 'Cost', align: 'right', render: (m) => money4(m.cost) }
         ]} />
-      <CustomPagination meta={meta} onPage={setPage} onLimit={(n) => { setLimit(n); setPage(1); }} />
+      {meta && meta.total > 0 && <CustomPagination
+        page={meta.page}
+        totalPages={meta.pages}
+        totalCount={meta.total}
+        pageSize={meta.limit}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+      />}
       <MessageDrawer id={open} onClose={() => setOpen(null)} />
       <SendTestDialog open={sending} onClose={() => setSending(false)} onSent={reload} />
     </>

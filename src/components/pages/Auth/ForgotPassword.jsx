@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { TextField, Alert, Link, Box } from '@mui/material';
+import { Alert, Link, Box } from '@mui/material';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import AppTextField from '../../common/AppTextField';
 import AuthLayout from './AuthLayout';
 import useForm, { check, collect } from './useForm';
 import { AppFormActions } from '../../common';
@@ -15,8 +17,8 @@ export default function ForgotPassword() {
       {done ? <Alert severity="success">If an account exists for that email, a reset link is on its way. It works for 1 hour.</Alert> : (
         <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
           {form.formError && <Alert severity="error">{form.formError}</Alert>}
-          <TextField label="Work email" type="email" autoFocus {...form.field('email')} />
-          <AppFormActions submitLabel="Send reset link" busy={form.busy} align="stretch" color="secondary" />
+          <AppTextField label="Work email" type="email" autoFocus {...form.field('email')} />
+          <AppFormActions submitLabel="Send reset link" submitIcon={<ForwardToInboxOutlinedIcon />} busy={form.busy} align="stretch" color="secondary" />
         </Box>
       )}
     </AuthLayout>

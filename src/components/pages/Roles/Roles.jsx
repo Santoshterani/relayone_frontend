@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Alert, Button, Chip, Tooltip } from '@mui/material';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { AppPageHeader, AppDataTable, AppConfirmDialog } from '../../common';
 import RoleDialog from './RoleDialog';
 import { useApi, useToast } from '../../../hooks';
@@ -22,7 +25,7 @@ export default function Roles() {
   return (
     <>
       <AppPageHeader title="Roles" subtitle="Enterprise Admin can do everything. Create other roles that only see and do what that kind of person needs."
-        actions={<Button variant="contained" onClick={() => setEditing({})}>New role</Button>} />
+        actions={<Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setEditing({})}>New role</Button>} />
       {roles.error && <Alert severity="error" sx={{ mb: 2 }}>{roles.error.message}</Alert>}
       <AppDataTable loading={roles.loading && !roles.data} rows={roles.data}
         columns={[
@@ -32,8 +35,8 @@ export default function Roles() {
           { key: 'permissions', label: 'Access', render: (r) => (r.isSystem ? 'Everything' : `${r.permissions.filter((p) => !catalog.data || catalog.data.permissions.some((c) => c.code === p && c.assignable)).length} of ${total || '…'} permissions`) },
           { key: 'act', label: '', align: 'right', render: (r) => (r.isSystem ? null : (
             <>
-              <Button size="small" onClick={() => setEditing(r)}>Edit</Button>
-              <Tooltip title={r.memberCount ? 'Move its members to another role first' : ''}><span><Button size="small" color="error" disabled={r.memberCount > 0} onClick={() => setRemoving(r)}>Delete</Button></span></Tooltip>
+              <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(r)}>Edit</Button>
+              <Tooltip title={r.memberCount ? 'Move its members to another role first' : ''}><span><Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} disabled={r.memberCount > 0} onClick={() => setRemoving(r)}>Delete</Button></span></Tooltip>
             </>)) }
         ]} />
       <RoleDialog open={!!editing} role={editing && editing.id ? editing : null} catalog={catalog.data} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); roles.reload(); }} />

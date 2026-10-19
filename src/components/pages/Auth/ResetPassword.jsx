@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { TextField, Alert, Link, Box } from '@mui/material';
+import { Alert, Link, Box } from '@mui/material';
+import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined';
 import AuthLayout from './AuthLayout';
 import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
@@ -24,7 +25,7 @@ export default function ResetPassword() {
         {form.formError && <Alert severity="error">{form.formError}</Alert>}
         <PasswordField label="New password" autoComplete="new-password" autoFocus {...form.field('password')} helperText={form.errors.password || 'At least 8 characters with a letter and a number.'} />
         <PasswordField label="Repeat password" autoComplete="new-password" {...form.field('confirm')} />
-        <AppFormActions submitLabel="Update password" busy={form.busy} align="stretch" color="secondary" />
+        <AppFormActions submitLabel="Update password" submitIcon={<LockResetOutlinedIcon />} busy={form.busy} align="stretch" color="secondary" />
       </Box>
     </AuthLayout>
   );

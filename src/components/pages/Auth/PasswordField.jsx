@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Button, TextField } from '@mui/material';
+import { IconButton, InputAdornment } from '@mui/material';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import AppTextField from '../../common/AppTextField';
 
 /** Password input with a Show / Hide button, as in the approved design. Takes the same props as TextField. */
 export default function PasswordField(props) {
   const [show, setShow] = useState(false);
   return (
-    <TextField {...props} type={show ? 'text' : 'password'}
-      InputProps={{ endAdornment: <Button size="small" onClick={() => setShow((s) => !s)} aria-label={show ? 'Hide password' : 'Show password'} sx={{ minWidth: 0, px: 1, fontSize: 12 }}>{show ? 'Hide' : 'Show'}</Button> }} />
+    <AppTextField {...props} type={show ? 'text' : 'password'}
+      InputProps={{ endAdornment: <InputAdornment position="end"><IconButton size="small" onClick={() => setShow((s) => !s)} aria-label={show ? 'Hide password' : 'Show password'} edge="end">{show ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}</IconButton></InputAdornment> }} />
   );
 }

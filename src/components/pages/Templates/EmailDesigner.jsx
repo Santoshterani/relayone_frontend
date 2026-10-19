@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, Chip, MenuItem, Paper, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, MenuItem, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { templateService } from '../../../services';
 import BlockEditor from './BlockEditor';
@@ -63,12 +64,12 @@ export default function EmailDesigner({ value, onChange, disabled, subject, body
                   <Grid container spacing={1.5}>
                     {COLORS.map(([k, label]) => (
                       <Grid key={k} size={{ xs: 6, sm: 3 }}>
-                        <TextField size="small" type="color" label={label} value={theme[k]} onChange={(e) => set({ design: { ...design, theme: { ...theme, [k]: e.target.value } } })} disabled={disabled} slotProps={{ inputLabel: { shrink: true } }} />
+                        <AppTextField size="small" type="color" label={label} value={theme[k]} onChange={(e) => set({ design: { ...design, theme: { ...theme, [k]: e.target.value } } })} disabled={disabled} slotProps={{ inputLabel: { shrink: true } }} />
                       </Grid>
                     ))}
-                    <Grid size={{ xs: 12, sm: 6 }}><TextField select size="small" label="Font" value={theme.font} onChange={(e) => set({ design: { ...design, theme: { ...theme, font: e.target.value } } })} disabled={disabled}>{Object.entries(FONTS).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}</TextField></Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}><TextField size="small" type="number" label="Width (px)" value={theme.width} onChange={(e) => set({ design: { ...design, theme: { ...theme, width: Number(e.target.value) } } })} disabled={disabled} slotProps={{ htmlInput: { min: 320, max: 720, step: 20 } }} /></Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}><TextField size="small" type="number" label="Corner radius" value={theme.radius} onChange={(e) => set({ design: { ...design, theme: { ...theme, radius: Number(e.target.value) } } })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 24 } }} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><AppTextField select size="small" label="Font" value={theme.font} onChange={(e) => set({ design: { ...design, theme: { ...theme, font: e.target.value } } })} disabled={disabled}>{Object.entries(FONTS).map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}</AppTextField></Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}><AppTextField size="small" type="number" label="Width (px)" value={theme.width} onChange={(e) => set({ design: { ...design, theme: { ...theme, width: Number(e.target.value) } } })} disabled={disabled} slotProps={{ htmlInput: { min: 320, max: 720, step: 20 } }} /></Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}><AppTextField size="small" type="number" label="Corner radius" value={theme.radius} onChange={(e) => set({ design: { ...design, theme: { ...theme, radius: Number(e.target.value) } } })} disabled={disabled} slotProps={{ htmlInput: { min: 0, max: 24 } }} /></Grid>
                   </Grid>
                 </Paper>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>Blocks</Typography>
@@ -78,7 +79,7 @@ export default function EmailDesigner({ value, onChange, disabled, subject, body
             {mode === 'html' && (
               <>
                 <Alert severity="info" sx={{ mb: 1.5 }}>Paste email HTML (tables and inline styles work best in every mail app). Use <code>{'{name}'}</code> style placeholders. For safety, scripts, forms, iframes, event handlers and non-https images are removed when you save and when the email is sent.</Alert>
-                <TextField label="HTML" multiline minRows={16} value={value.html || ''} onChange={(e) => set({ html: e.target.value })} disabled={disabled}
+                <AppTextField label="HTML" multiline minRows={16} value={value.html || ''} onChange={(e) => set({ html: e.target.value })} disabled={disabled}
                   slotProps={{ htmlInput: { className: 'mono', style: { fontSize: 12.5 }, spellCheck: false } }} helperText="The Message tab text is sent as the plain-text part for mail apps that cannot show HTML." />
               </>
             )}

@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Switch, TextField, Typography, Tooltip } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Switch, Typography, Tooltip } from '@mui/material';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppSectionCard, AppDataTable, AppConfirmDialog, AppStatusChip, CustomPagination } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { webhookService } from '../../../services';
@@ -28,13 +34,13 @@ function AddDialog({ open, onClose, onCreated }) {
             <Alert severity="warning" sx={{ mb: 2 }}>This secret is shown once. Use it on your server to check that requests really come from RelayOne.</Alert>
             <Box className="rl-code mono" sx={{ userSelect: 'all' }}>{created.secret}</Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={() => copy(created.secret, 'Secret')}>Copy secret</Button><Button variant="contained" onClick={close}>I have saved it</Button></DialogActions>
+          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={() => copy(created.secret, 'Secret')} startIcon={<ContentCopyOutlinedIcon />}>Copy secret</Button><Button variant="contained" onClick={close}>I have saved it</Button></DialogActions>
         </>
       ) : (
         <Box component="form" onSubmit={submit} noValidate>
           <DialogTitle sx={{ fontSize: 16 }}>Add a webhook endpoint</DialogTitle>
-          <DialogContent><TextField label="Endpoint URL" autoFocus value={url} onChange={(e) => { setUrl(e.target.value); setError(''); }} error={!!error} helperText={error || 'We send a POST here whenever a message is sent, delivered or fails. Must be https in production.'} sx={{ mt: 1 }} placeholder="https://api.yourapp.com/relayone/events" /></DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>Add endpoint</Button></DialogActions>
+          <DialogContent><AppTextField label="Endpoint URL" autoFocus value={url} onChange={(e) => { setUrl(e.target.value); setError(''); }} error={!!error} helperText={error || 'We send a POST here whenever a message is sent, delivered or fails. Must be https in production.'} sx={{ mt: 1 }} placeholder="https://api.yourapp.com/relayone/events" /></DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy} startIcon={<AddOutlinedIcon />}>Add endpoint</Button></DialogActions>
         </Box>
       )}
     </Dialog>
@@ -54,8 +60,8 @@ export default function Webhooks() {
   const toast = useToast();
   const write = can('webhooks.write');
   const hooks = useApi(() => webhookService.listWebhooks(), []);
-  const [page, setPage] = useState(1);
-  const deliveries = useApi(() => webhookService.listDeliveries({ page, limit: 10 }), [page]);
+  const [page, setPage] = useState(1); const [limit, setLimit] = useState(10);
+  const deliveries = useApi(() => webhookService.listDeliveries({ page, limit }), [page, limit]);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -65,7 +71,7 @@ export default function Webhooks() {
     setBusy(true);
     try { await webhookService.deleteWebhook(removing.id); toast.success('Endpoint removed.'); setRemoving(null); hooks.reload(); deliveries.reload(); } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
-  const add = <Button variant="contained" onClick={() => setAdding(true)}>Add endpoint</Button>;
+  const add = <Button variant="contained" onClick={() => setAdding(true)} startIcon={<AddOutlinedIcon />}>Add endpoint</Button>;
 
   return (
     <>
@@ -78,10 +84,10 @@ export default function Webhooks() {
           { key: 'secretHint', label: 'Secret', render: (h) => <span className="mono">whsec_…{h.secretHint}</span> },
           { key: 'createdAt', label: 'Added', render: (h) => dateTime(h.createdAt) },
           { key: 'active', label: 'Active', render: (h) => <Tooltip title={write ? (h.active ? 'Pause sending' : 'Resume sending') : ''}><span><Switch size="small" checked={h.active} disabled={!write} onChange={() => toggle(h)} inputProps={{ 'aria-label': `Active ${h.url}` }} /></span></Tooltip> },
-          { key: 'act', label: '', align: 'right', render: (h) => write && <Button size="small" color="error" onClick={() => setRemoving(h)}>Remove</Button> }
+          { key: 'act', label: '', align: 'right', render: (h) => write && <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setRemoving(h)}>Remove</Button> }
         ]} />
 
-      <AppSectionCard title="Recent deliveries" sx={{ mt: 3 }} subtitle="Failed deliveries are retried with a growing delay, then marked failed.">
+      <AppSectionCard title="Recent deliveries" icon={<HistoryOutlinedIcon />} sx={{ mt: 3 }} subtitle="Failed deliveries are retried with a growing delay, then marked failed.">
         <AppDataTable loading={deliveries.loading && !deliveries.data} rows={deliveries.data} empty={{ title: 'Nothing sent yet', message: 'Events appear here after your first message changes status.' }}
           columns={[
             { key: 'createdAt', label: 'Time', render: (d) => dateTime(d.createdAt) },
@@ -92,10 +98,18 @@ export default function Webhooks() {
             { key: 'attempts', label: 'Tries' },
             { key: 'lastError', label: 'Error', render: (d) => d.lastError || '' }
           ]} />
-        <CustomPagination meta={deliveries.meta} onPage={setPage} />
+        {deliveries.meta && deliveries.meta.total > 0 && <CustomPagination
+          page={deliveries.meta.page}
+          totalPages={deliveries.meta.pages}
+          totalCount={deliveries.meta.total}
+          pageSize={deliveries.meta.limit}
+          pageSizeOptions={[10, 20, 50]}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+        />}
       </AppSectionCard>
 
-      <AppSectionCard title="Verify the signature" subtitle="Each request has an X-RelayOne-Signature header: t=<time>,v1=<HMAC-SHA256 of 't.body'>.">
+      <AppSectionCard title="Verify the signature" icon={<VerifiedUserOutlinedIcon />} subtitle="Each request has an X-RelayOne-Signature header: t=<time>,v1=<HMAC-SHA256 of 't.body'>.">
         <pre className="rl-code mono" style={{ margin: 0 }}>{VERIFY}</pre>
       </AppSectionCard>
       <AddDialog open={adding} onClose={() => setAdding(false)} onCreated={hooks.reload} />

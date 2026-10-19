@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
+import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import AppTextField from '../../common/AppTextField';
 import { useToast } from '../../../hooks';
 import { roleService } from '../../../services';
 
@@ -54,8 +57,8 @@ export default function RoleDialog({ open, role, catalog, onClose, onSaved }) {
         <DialogContent sx={{ pt: '8px !important' }}>
           {errors.form && <Alert severity="error" sx={{ mb: 2 }}>{errors.form}</Alert>}
           <Box sx={{ display: 'grid', gap: 2, mb: 2 }}>
-            <TextField label="Role name" autoFocus value={name} onChange={(e) => { setName(e.target.value); setErrors({}); }} error={!!errors.name} helperText={errors.name} placeholder="e.g. Developer, Support, Finance" />
-            <TextField label="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <AppTextField label="Role name" autoFocus value={name} onChange={(e) => { setName(e.target.value); setErrors({}); }} error={!!errors.name} helperText={errors.name} placeholder="e.g. Developer, Support, Finance" />
+            <AppTextField label="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
           </Box>
           <Typography variant="h3" sx={{ mb: 0.5 }}>What this role can do</Typography>
           <Typography variant="caption" color="text.secondary">Allowing a change also allows viewing. Managing the team and roles stays with Enterprise Admins.</Typography>
@@ -72,7 +75,7 @@ export default function RoleDialog({ open, role, catalog, onClose, onSaved }) {
             </TableBody>
           </Table>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>{role ? 'Save role' : 'Create role'}</Button></DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" startIcon={role ? <SaveOutlinedIcon /> : <AddOutlinedIcon />} disabled={busy}>{role ? 'Save role' : 'Create role'}</Button></DialogActions>
       </Box>
     </Dialog>
   );

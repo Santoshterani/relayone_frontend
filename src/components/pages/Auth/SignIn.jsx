@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { TextField, Button, Alert, Link, Box } from '@mui/material';
+import { Button, Alert, Link, Box } from '@mui/material';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import AppTextField from '../../common/AppTextField';
 import AuthLayout from './AuthLayout';
 import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
@@ -33,10 +36,10 @@ export default function SignIn() {
     <AuthLayout title="Sign in" subtitle="Welcome back. Sign in to manage your messaging.">
       <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
         {form.formError && <Alert severity="error">{form.formError}</Alert>}
-        {needsVerify && <Button size="small" onClick={resend}>Send the verification email again</Button>}
-        <TextField label="Work email" type="email" autoComplete="email" autoFocus {...form.field('email')} />
+        {needsVerify && <Button size="small" startIcon={<ForwardToInboxOutlinedIcon />} onClick={resend}>Send the verification email again</Button>}
+        <AppTextField label="Work email" type="email" autoComplete="email" autoFocus {...form.field('email')} />
         <PasswordField label="Password" autoComplete="current-password" {...form.field('password')} />
-        <AppFormActions submitLabel="Sign in" busy={form.busy} align="stretch" color="secondary" />
+        <AppFormActions submitLabel="Sign in" submitIcon={<LoginOutlinedIcon />} busy={form.busy} align="stretch" color="secondary" />
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap', fontSize: 12.5 }}>
         <Link component={RouterLink} to="/forgot-password" fontWeight={600}>Forgot password?</Link>

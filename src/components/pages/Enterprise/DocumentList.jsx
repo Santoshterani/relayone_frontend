@@ -1,5 +1,9 @@
 import React from 'react';
 import { Alert, Box, Button, Paper, Typography } from '@mui/material';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import HighlightOffOutlinedIcon from '@mui/icons-material/HighlightOffOutlined';
 import { DocChip, fileSize } from './documentUi';
 import { dateTime } from '../../../utils/format';
 
@@ -32,10 +36,10 @@ export default function DocumentList({ docs, admin, canEdit, onView, onUpload, o
             {!admin && d.status === 'not_submitted' && <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'warning.main' }}>Required for KYC. Please upload to continue.</Typography>}
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {d.fileName && <Button size="small" variant="outlined" onClick={() => onView(d)} aria-label={`View ${d.title}`}>View</Button>}
-            {!admin && canEdit && <Button size="small" variant={d.status === 'not_submitted' || d.status === 'rejected' ? 'contained' : 'outlined'} onClick={() => onUpload(d)} aria-label={`${d.status === 'not_submitted' ? 'Upload' : 'Replace'} ${d.title}`}>{d.status === 'not_submitted' ? 'Upload' : 'Replace'}</Button>}
-            {admin && d.fileName && d.status !== 'verified' && <Button size="small" color="success" variant="contained" onClick={() => onReview(d, 'verified')} aria-label={`Verify ${d.title}`}>Verify</Button>}
-            {admin && d.fileName && d.status !== 'rejected' && <Button size="small" color="error" variant="outlined" onClick={() => onReview(d, 'rejected')} aria-label={`Reject ${d.title}`}>Reject</Button>}
+            {d.fileName && <Button size="small" variant="outlined" startIcon={<VisibilityOutlinedIcon />} onClick={() => onView(d)} aria-label={`View ${d.title}`}>View</Button>}
+            {!admin && canEdit && <Button size="small" variant={d.status === 'not_submitted' || d.status === 'rejected' ? 'contained' : 'outlined'} startIcon={<UploadFileOutlinedIcon />} onClick={() => onUpload(d)} aria-label={`${d.status === 'not_submitted' ? 'Upload' : 'Replace'} ${d.title}`}>{d.status === 'not_submitted' ? 'Upload' : 'Replace'}</Button>}
+            {admin && d.fileName && d.status !== 'verified' && <Button size="small" color="success" variant="contained" startIcon={<TaskAltOutlinedIcon />} onClick={() => onReview(d, 'verified')} aria-label={`Verify ${d.title}`}>Verify</Button>}
+            {admin && d.fileName && d.status !== 'rejected' && <Button size="small" color="error" variant="outlined" startIcon={<HighlightOffOutlinedIcon />} onClick={() => onReview(d, 'rejected')} aria-label={`Reject ${d.title}`}>Reject</Button>}
           </Box>
         </Paper>
       ))}

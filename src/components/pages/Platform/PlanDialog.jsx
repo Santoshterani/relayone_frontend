@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch, Typography } from '@mui/material';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import AppTextField from '../../common/AppTextField';
 import { useToast } from '../../../hooks';
 import { planService } from '../../../services';
 
@@ -39,21 +41,21 @@ export default function PlanDialog({ open, plan, onClose, onSaved }) {
         <DialogContent sx={{ pt: '8px !important' }}>
           {errors.form && <Alert severity="error" sx={{ mb: 2 }}>{errors.form}</Alert>}
           <Box sx={{ display: 'grid', gap: 2 }}>
-            <TextField label="Plan name" autoFocus value={f.name} onChange={set('name')} error={!!errors.name} helperText={errors.name} />
-            <TextField label="Description (optional)" value={f.description} onChange={set('description')} />
+            <AppTextField label="Plan name" autoFocus value={f.name} onChange={set('name')} error={!!errors.name} helperText={errors.name} />
+            <AppTextField label="Description (optional)" value={f.description} onChange={set('description')} />
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField label="Price (USD)" type="number" value={f.price} onChange={set('price')} error={!!errors.price} helperText={errors.price} inputProps={{ step: '0.01', min: 0 }} fullWidth />
-              <TextField label="Messages" type="number" value={f.messages} onChange={set('messages')} error={!!errors.messages} helperText={errors.messages} inputProps={{ min: 1 }} fullWidth />
+              <AppTextField label="Price (USD)" type="number" value={f.price} onChange={set('price')} error={!!errors.price} helperText={errors.price} inputProps={{ step: '0.01', min: 0 }} fullWidth />
+              <AppTextField label="Messages" type="number" value={f.messages} onChange={set('messages')} error={!!errors.messages} helperText={errors.messages} inputProps={{ min: 1 }} fullWidth />
             </Box>
             {perMessage && <Typography variant="caption" color="text.secondary">Works out to ${perMessage} per message, for email and in-app alike.</Typography>}
-            <TextField label="Show order" type="number" value={f.sortOrder} onChange={set('sortOrder')} helperText="Smaller numbers are shown first." inputProps={{ min: 0 }} />
+            <AppTextField label="Show order" type="number" value={f.sortOrder} onChange={set('sortOrder')} helperText="Smaller numbers are shown first." inputProps={{ min: 0 }} />
             <FormControlLabel control={<Switch checked={f.isActive} onChange={(e) => setF({ ...f, isActive: e.target.checked })} />} label={f.isActive ? 'On sale' : 'Hidden from new buyers'} />
             {plan && <Alert severity="info">Changes apply to new purchases only. Buckets already bought keep their size and price.</Alert>}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button>
+          <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button>
         </DialogActions>
       </Box>
     </Dialog>

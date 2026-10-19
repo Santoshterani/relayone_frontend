@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Checkbox, Chip, Tab, Tabs, Switch, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup, MenuItem, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Checkbox, Chip, Tab, Tabs, Switch, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, FormGroup, MenuItem, Typography } from '@mui/material';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
+import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppDataTable, AppStatusChip, AppConfirmDialog, CustomPagination } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { staffService } from '../../../services';
@@ -44,13 +51,13 @@ function AddDialog({ open, isSuper, onClose, onAdded }) {
         <DialogTitle sx={{ fontSize: 16 }}>{isSuper ? 'Add support staff' : 'Add a support agent'}</DialogTitle>
         <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
           {errors.form && <Alert severity="error">{errors.form}</Alert>}
-          <TextField label="Work email" type="email" autoFocus value={f.email} onChange={(e) => { setF({ ...f, email: e.target.value }); setErrors({}); }} error={!!errors.email} helperText={errors.email} />
-          <TextField label="Name (optional)" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-          {isSuper && <TextField select label="Role" value={f.staffType} onChange={(e) => setF({ ...f, staffType: e.target.value })} helperText={f.staffType === 'lead' ? 'A Support Admin has every support permission and can add agents.' : 'An agent only gets the permissions ticked below.'}><MenuItem value="lead">Support Admin</MenuItem><MenuItem value="agent">Support Agent</MenuItem></TextField>}
+          <AppTextField label="Work email" type="email" autoFocus value={f.email} onChange={(e) => { setF({ ...f, email: e.target.value }); setErrors({}); }} error={!!errors.email} helperText={errors.email} />
+          <AppTextField label="Name (optional)" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          {isSuper && <AppTextField select label="Role" value={f.staffType} onChange={(e) => setF({ ...f, staffType: e.target.value })} helperText={f.staffType === 'lead' ? 'A Support Admin has every support permission and can add agents.' : 'An agent only gets the permissions ticked below.'}><MenuItem value="lead">Support Admin</MenuItem><MenuItem value="agent">Support Agent</MenuItem></AppTextField>}
           {f.staffType === 'agent' && <FormControlLabel control={<Switch checked={senior} onChange={(e) => setSenior(e.target.checked)} />} label={<Box><Typography sx={{ fontWeight: 500 }}>Senior agent</Typography><Typography variant="caption" color="text.secondary">Takes escalated (critical) tickets at level 2</Typography></Box>} />}
           {f.staffType === 'agent' && <Box><Typography variant="h3" sx={{ mb: 0.5 }}>What can this agent do?</Typography><PermissionChecks value={perms} onChange={setPerms} /></Box>}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy}>Send invitation</Button></DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={close} disabled={busy}>Cancel</Button><Button type="submit" variant="contained" disabled={busy} startIcon={<PersonAddAlt1OutlinedIcon />}>Send invitation</Button></DialogActions>
       </Box>
     </Dialog>
   );
@@ -91,8 +98,8 @@ function TeamDialog({ target, staff, onClose, onSaved }) {
 }
 
 function EnterpriseTeams({ staff }) {
-  const [page, setPage] = useState(1); const [editing, setEditing] = useState(null);
-  const teams = useApi(() => staffService.teams({ page, limit: 20 }), [page]);
+  const [page, setPage] = useState(1); const [limit, setLimit] = useState(20); const [editing, setEditing] = useState(null);
+  const teams = useApi(() => staffService.teams({ page, limit }), [page, limit]);
   return (
     <>
       {teams.error && <Alert severity="error" sx={{ mb: 2 }}>{teams.error.message}</Alert>}
@@ -103,7 +110,14 @@ function EnterpriseTeams({ staff }) {
           { key: 'members', label: 'Dedicated support team', render: (e) => (e.members.length ? <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>{e.members.map((m) => <Chip key={m.id} size="small" variant="outlined" label={m.name + (m.isSenior ? ' · Senior' : '')} />)}</Box> : <Typography color="text.secondary">None, handled by the whole desk</Typography>) },
           { key: 'act', label: '', align: 'right', render: (e) => <Button size="small" onClick={() => setEditing(e)}>Set team</Button> }
         ]} />
-      <CustomPagination meta={teams.meta} onPage={setPage} />
+      {teams.meta && teams.meta.total > 0 && <CustomPagination
+        page={teams.meta.page}
+        totalPages={teams.meta.pages}
+        totalCount={teams.meta.total}
+        pageSize={teams.meta.limit}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+      />}
       <TeamDialog target={editing} staff={staff} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); teams.reload(); }} />
     </>
   );
@@ -124,8 +138,8 @@ export default function SupportTeam() {
   return (
     <>
       <AppPageHeader title="Support team" subtitle={isSuper ? 'Add a Support Admin. They add agents, mark seniors, and give each enterprise a dedicated team.' : 'Add agents, choose what each can do, mark seniors for escalations, and give each enterprise a dedicated team.'}
-        actions={tab === 'staff' && <Button variant="contained" onClick={() => setAdding(true)}>{isSuper ? 'Add staff' : 'Add agent'}</Button>} />
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}><Tab value="staff" label="Staff" sx={{ textTransform: 'none' }} /><Tab value="teams" label="Enterprise teams" sx={{ textTransform: 'none' }} /></Tabs>
+        actions={tab === 'staff' && <Button variant="contained" startIcon={<PersonAddAlt1OutlinedIcon />} onClick={() => setAdding(true)}>{isSuper ? 'Add staff' : 'Add agent'}</Button>} />
+      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}><Tab value="staff" icon={<ManageAccountsOutlinedIcon />} iconPosition="start" label="Staff" sx={{ textTransform: 'none' }} /><Tab value="teams" icon={<GroupsOutlinedIcon />} iconPosition="start" label="Enterprise teams" sx={{ textTransform: 'none' }} /></Tabs>
       {tab === 'teams' && <EnterpriseTeams staff={staff.data} />}
       {tab === 'staff' && <>
       {staff.error && <Alert severity="error" sx={{ mb: 2 }}>{staff.error.message}</Alert>}
@@ -137,9 +151,9 @@ export default function SupportTeam() {
           { key: 'status', label: 'Status', render: (m) => <AppStatusChip status={m.status} /> },
           { key: 'act', label: '', align: 'right', render: (m) => canTouch(m) && (
             <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-              {m.staffType === 'agent' && <Button size="small" onClick={() => setEditing(m)}>Permissions</Button>}
-              {m.status === 'invited' && <Button size="small" onClick={() => act(() => staffService.resendInvite(m.id), 'Invitation sent again.')}>Resend invite</Button>}
-              <Button size="small" color="error" onClick={() => setRemoving(m)}>Remove</Button>
+              {m.staffType === 'agent' && <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(m)}>Permissions</Button>}
+              {m.status === 'invited' && <Button size="small" startIcon={<ForwardToInboxOutlinedIcon />} onClick={() => act(() => staffService.resendInvite(m.id), 'Invitation sent again.')}>Resend invite</Button>}
+              <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setRemoving(m)}>Remove</Button>
             </Box>) }
         ]} />
       </>}

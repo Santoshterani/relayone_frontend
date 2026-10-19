@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Button, IconButton, MenuItem, Paper, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Paper, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import AppTextField from '../../common/AppTextField';
 import { BLOCKS } from './designUi';
 
 const Align = ({ value, onChange, disabled }) => (
@@ -9,7 +10,7 @@ const Align = ({ value, onChange, disabled }) => (
 );
 
 function Fields({ b, set, disabled }) {
-  const f = (k, label, extra = {}) => <TextField size="small" label={label} value={b[k] ?? ''} onChange={(e) => set({ [k]: e.target.value })} disabled={disabled} {...extra} />;
+  const f = (k, label, extra = {}) => <AppTextField size="small" label={label} value={b[k] ?? ''} onChange={(e) => set({ [k]: e.target.value })} disabled={disabled} {...extra} />;
   switch (b.type) {
     case 'header': return <Box sx={{ display: 'grid', gap: 1.25 }}>{f('brand', 'Brand name')}{f('logoUrl', 'Logo image link (https://…)')}<Align value={b.align} onChange={(align) => set({ align })} disabled={disabled} /></Box>;
     case 'heading': case 'text': return <Box sx={{ display: 'grid', gap: 1.25 }}>{f('text', b.type === 'heading' ? 'Heading' : 'Text', { multiline: true, minRows: b.type === 'text' ? 3 : 1 })}<Align value={b.align} onChange={(align) => set({ align })} disabled={disabled} /></Box>;
@@ -22,8 +23,8 @@ function Fields({ b, set, disabled }) {
         {f('title', 'Table title')}
         {(b.rows || []).map((r, i) => (
           <Box key={i} sx={{ display: 'flex', gap: 1 }}>
-            <TextField size="small" label="Label" value={r.label} disabled={disabled} onChange={(e) => set({ rows: b.rows.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
-            <TextField size="small" label="Value" value={r.value} disabled={disabled} onChange={(e) => set({ rows: b.rows.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)) })} />
+            <AppTextField size="small" label="Label" value={r.label} disabled={disabled} onChange={(e) => set({ rows: b.rows.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })} />
+            <AppTextField size="small" label="Value" value={r.value} disabled={disabled} onChange={(e) => set({ rows: b.rows.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)) })} />
             <Button size="small" color="error" disabled={disabled || b.rows.length < 2} onClick={() => set({ rows: b.rows.filter((x, j) => j !== i) })} aria-label={`Remove row ${i + 1}`}>×</Button>
           </Box>
         ))}
@@ -53,9 +54,9 @@ export default function BlockEditor({ blocks, onChange, disabled }) {
           <Fields b={b} set={(patch) => update(i, patch)} disabled={disabled} />
         </Paper>
       ))}
-      <TextField select size="small" label="Add a block" value="" onChange={(e) => onChange([...blocks, BLOCKS[e.target.value].make()])} disabled={disabled || blocks.length >= 40} sx={{ minWidth: 220 }}>
+      <AppTextField select size="small" label="Add a block" value="" onChange={(e) => onChange([...blocks, BLOCKS[e.target.value].make()])} disabled={disabled || blocks.length >= 40} sx={{ minWidth: 220 }}>
         {Object.entries(BLOCKS).map(([k, v]) => <MenuItem key={k} value={k}>{v.label}</MenuItem>)}
-      </TextField>
+      </AppTextField>
     </Box>
   );
 }

@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Chip, LinearProgress, Paper, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, LinearProgress, Paper, Tab, Tabs, Typography } from '@mui/material';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
+import PriceChangeOutlinedIcon from '@mui/icons-material/PriceChangeOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
+import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppMetricCard, AppDataTable, AppConfirmDialog, AppSkeletonLoader, CustomPagination } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
@@ -14,9 +23,10 @@ export default function Wallet() {
   const { can, user } = useAppContext();
   const toast = useToast();
   const topup = can('wallet.topup');
+  const [tab, setTab] = useState('wallet');
   const wallet = useApi(() => walletService.getWallet(), []);
-  const [page, setPage] = useState(1);
-  const tx = useApi(() => walletService.listTransactions({ page, limit: 15 }), [page]);
+  const [page, setPage] = useState(1); const [limit, setLimit] = useState(15);
+  const tx = useApi(() => walletService.listTransactions({ page, limit }), [page, limit]);
   const [amount, setAmount] = useState('10');
   const [amountError, setAmountError] = useState('');
   const [threshold, setThreshold] = useState('');
@@ -56,11 +66,16 @@ export default function Wallet() {
   return (
     <>
       <AppPageHeader title="Wallet & billing" subtitle="Prepaid balance in US dollars, and prepaid plans. Each message is paid for when accepted, and given back if it ends up failing." />
+      <Tabs value={tab} onChange={(e, value) => setTab(value)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} aria-label="Wallet and billing sections">
+        <Tab value="wallet" icon={<AccountBalanceWalletOutlinedIcon />} iconPosition="start" label="Wallet" sx={{ textTransform: 'none' }} />
+        <Tab value="billing" icon={<ReceiptLongOutlinedIcon />} iconPosition="start" label="Billing" sx={{ textTransform: 'none' }} />
+      </Tabs>
+      {tab === 'wallet' && <>
       {w.lowBalance && <Alert severity="warning" sx={{ mb: 2 }}>Your balance is below your alert level of {money(w.threshold)}. Sending stops when it reaches $0.</Alert>}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 4 }}><AppMetricCard label="Balance" value={money(w.balance, 4)} tone={w.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(w.threshold)}`} /></Grid>
         <Grid size={{ xs: 12, md: 8 }}>
-          <AppSectionCard title="Wallet price per message" sx={{ mb: 0, height: '100%' }}>
+          <AppSectionCard title="Wallet price per message" icon={<PriceChangeOutlinedIcon />} sx={{ mb: 0, height: '100%' }}>
             <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
               {[['Email, your own SMTP', prices.email_own], ['Email, shared sender', prices.email_shared], ['In-app', prices.inapp]].map(([l, p]) => (
                 <Box key={l}><Typography variant="caption" color="text.secondary">{l}</Typography><Typography sx={{ fontSize: 18, fontWeight: 600 }}>{money4(p)}</Typography></Box>))}
@@ -78,7 +93,7 @@ export default function Wallet() {
           <>
             {exhausted && <Alert severity="warning" sx={{ mb: 2 }}>Your plan messages are used up. New messages are charged to your wallet at the normal price. Buy a plan below to get the plan rate again.</Alert>}
             {low && <Alert severity="warning" sx={{ mb: 2 }}>Only {p.remaining.toLocaleString()} plan messages left. Buy another plan so you keep the plan rate. If you don't, messages after that are charged to your wallet.</Alert>}
-            <AppSectionCard title="Prepaid plans" subtitle="Buy messages in bulk for a lower price per message. Plan messages are used first, then the wallet pays."
+            <AppSectionCard title="Prepaid plans" icon={<Inventory2OutlinedIcon />} subtitle="Buy messages in bulk for a lower price per message. Plan messages are used first, then the wallet pays."
               actions={<Box sx={{ textAlign: 'right' }}><Typography variant="caption" color="text.secondary">Plan messages left</Typography><Typography sx={{ fontSize: 20, fontWeight: 600 }} data-testid="plan-remaining">{p.remaining.toLocaleString()}</Typography></Box>}>
               {p.plans.length === 0 ? <Typography color="text.secondary">No plans are on sale right now.</Typography> : (
                 <Grid container spacing={2}>
@@ -90,7 +105,7 @@ export default function Wallet() {
                         <Typography sx={{ fontSize: 24, fontWeight: 600, mt: 1 }}>{money(pl.price)}</Typography>
                         <Typography variant="body2">{Number(pl.messages).toLocaleString()} messages</Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>{money4(pl.perMessage)} per message</Typography>
-                        {topup && <Button variant="outlined" sx={{ mt: 'auto' }} onClick={() => setBuying(pl)} aria-label={`Buy ${pl.name} plan`}>Buy plan</Button>}
+                        {topup && <Button variant="outlined" startIcon={<ShoppingCartOutlinedIcon />} sx={{ mt: 'auto' }} onClick={() => setBuying(pl)} aria-label={`Buy ${pl.name} plan`}>Buy plan</Button>}
                       </Paper>
                     </Grid>))}
                 </Grid>)}
@@ -116,25 +131,26 @@ export default function Wallet() {
           <Grid size={{ xs: 12, md: 7 }}>
             <AppSectionCard title="Add money">
               <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>{QUICK.map((q) => <Chip key={q} label={`$${q}`} clickable color={Number(amount) === q ? 'primary' : 'default'} variant={Number(amount) === q ? 'filled' : 'outlined'} onClick={() => { setAmount(String(q)); setAmountError(''); }} />)}</Box>
-              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-                <TextField label="Amount (USD)" type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setAmountError(''); }} error={!!amountError} helperText={amountError} sx={{ maxWidth: 200 }} />
-                <Button variant="contained" onClick={addMoney} disabled={!!busy} sx={{ mt: 0.25 }}>{busy === 'topup' ? 'Waiting for payment…' : cfg.provider === 'razorpay' ? 'Pay with Razorpay' : 'Add money'}</Button>
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
+                <AppTextField label="Amount (USD)" type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setAmountError(''); }} error={!!amountError} helperText={amountError} sx={{ maxWidth: 200 }} />
+                <Button variant="contained" startIcon={<AddCircleOutlineOutlinedIcon />} onClick={addMoney} disabled={!!busy}>{busy === 'topup' ? 'Waiting for payment…' : cfg.provider === 'razorpay' ? 'Pay with Razorpay' : 'Add money'}</Button>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{cfg.provider === 'razorpay' ? `You pay ${inGateway(amount || 0)} (${money(amount || 0)} at ₹${cfg.usdRate} per $1) by card, UPI or net banking. Payments are processed securely by Razorpay.` : 'Demo mode: no card is charged. Set PAYMENT_PROVIDER=razorpay on the server to take real payments.'}</Typography>
             </AppSectionCard>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
-            <AppSectionCard title="Low balance alert" subtitle="We email your billing contact once when the balance drops below this.">
-              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-                <TextField label="Alert below (USD)" type="number" value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder={String(Number(w.threshold))} sx={{ maxWidth: 180 }} />
-                <Button variant="outlined" onClick={saveThreshold} disabled={!!busy} sx={{ mt: 0.25 }}>Save</Button>
+            <AppSectionCard title="Low balance alert" icon={<NotificationsActiveOutlinedIcon />} subtitle="We email your billing contact once when the balance drops below this.">
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
+                <AppTextField label="Alert below (USD)" type="number" value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder={String(Number(w.threshold))} sx={{ maxWidth: 180 }} />
+                <Button variant="outlined" startIcon={<SaveOutlinedIcon />} onClick={saveThreshold} disabled={!!busy}>Save</Button>
               </Box>
             </AppSectionCard>
           </Grid>
         </Grid>
       )}
+      </>}
 
-      <AppSectionCard title="Transactions" sx={{ mt: 1 }}>
+      {tab === 'billing' && <AppSectionCard title="Transactions" icon={<ReceiptLongOutlinedIcon />}>
         <AppDataTable loading={tx.loading && !tx.data} rows={tx.data} empty={{ title: 'No transactions yet' }}
           columns={[
             { key: 'createdAt', label: 'Time', render: (t) => dateTime(t.createdAt) },
@@ -143,8 +159,16 @@ export default function Wallet() {
             { key: 'amount', label: 'Amount', align: 'right', render: (t) => (Number(t.amount) === 0 ? money4(0) : <span style={{ color: Number(t.amount) < 0 ? undefined : '#137A4B' }}>{Number(t.amount) < 0 ? '−' : '+'}{money4(Math.abs(t.amount))}</span>) },
             { key: 'balanceAfter', label: 'Balance', align: 'right', render: (t) => money4(t.balanceAfter) }
           ]} />
-        <CustomPagination meta={tx.meta} onPage={setPage} />
-      </AppSectionCard>
+        {tx.meta && tx.meta.total > 0 && <CustomPagination
+          page={tx.meta.page}
+          totalPages={tx.meta.pages}
+          totalCount={tx.meta.total}
+          pageSize={tx.meta.limit}
+          pageSizeOptions={[10, 15, 20, 50]}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+        />}
+      </AppSectionCard>}
     </>
   );
 }

@@ -12,9 +12,9 @@ export const NAV = [
   { path: '/wallet', label: 'Wallet & billing', icon: WalletIcon, permission: 'wallet.read' },
   { path: '/team', label: 'Users & Roles', icon: TeamIcon, permission: 'team.read' },
   { path: '/support', label: 'Support', icon: LifebuoyIcon, permission: 'tickets.read' },
+  { path: '/overview', label: 'Dashboard', icon: DashboardIcon, permission: 'platform.manage' },
+  { path: '/platform', label: 'Enterprises', icon: ListIcon, permission: 'platform.manage' },
+  { path: '/pricing', label: 'Plans & pricing', icon: TagIcon, permission: 'platform.manage' },
   { path: '/desk', label: 'Support desk', icon: HeadsetIcon, permission: 'support.view' },
   { path: '/support-team', label: 'Support team', icon: TeamIcon, permission: 'support.staff' },
-  { path: '/overview', label: 'Overview', icon: DashboardIcon, permission: 'platform.manage' },
-  { path: '/platform', label: 'Enterprises', icon: ListIcon, permission: 'platform.manage' },
-  { path: '/pricing', label: 'Plans & pricing', icon: TagIcon, permission: 'platform.manage' }
 ];

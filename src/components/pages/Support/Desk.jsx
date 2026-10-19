@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, MenuItem, Paper, Tab, Tabs, TextField } from '@mui/material';
+import { Alert, Box, InputAdornment, MenuItem, Paper, Tab, Tabs } from '@mui/material';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, AppSectionCard, DonutChart, CustomPagination } from '../../common';
 import { useApi, useAppContext } from '../../../hooks';
 import { supportService } from '../../../services';
@@ -14,11 +21,11 @@ const COUNT_KEY = { open: 'open', in_progress: 'inProgress', escalated: 'escalat
 export default function Desk() {
   const navigate = useNavigate();
   const { user } = useAppContext();
-  const [tab, setTab] = useState(''); const [page, setPage] = useState(1);
+  const [tab, setTab] = useState(''); const [page, setPage] = useState(1); const [limit, setLimit] = useState(20);
   const [level, setLevel] = useState(''); const [priority, setPriority] = useState(''); const [category, setCategory] = useState(''); const [assignee, setAssignee] = useState(''); const [q, setQ] = useState('');
   const sum = useApi(() => supportService.summary(), []);
   const agents = useApi(() => supportService.agents(), []);
-  const list = useApi(() => supportService.list({ page, limit: 20, ...(tab ? { status: tab } : {}), ...(level === 'breached' ? { breached: true } : level ? { level } : {}), ...(priority ? { priority } : {}), ...(category ? { category } : {}), ...(assignee === 'none' ? { unassigned: true } : assignee ? { assigneeId: assignee } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [tab, page, level, priority, category, assignee, q]);
+  const list = useApi(() => supportService.list({ page, limit, ...(tab ? { status: tab } : {}), ...(level === 'breached' ? { breached: true } : level ? { level } : {}), ...(priority ? { priority } : {}), ...(category ? { category } : {}), ...(assignee === 'none' ? { unassigned: true } : assignee ? { assigneeId: assignee } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [tab, page, limit, level, priority, category, assignee, q]);
   const s = sum.data; const c = s ? s.counts : {};
   const reset = (fn) => (e) => { fn(e.target.value); setPage(1); };
 
@@ -47,14 +54,14 @@ export default function Desk() {
       )}
       <AppSectionCard title="All tickets" sx={{ p: 2 }}>
         <Tabs value={tab} onChange={(e, v) => { setTab(v); setPage(1); }} variant="scrollable" scrollButtons="auto" sx={{ mb: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-          {TABS.map(([v, l]) => <Tab key={v} value={v} sx={{ textTransform: 'none', minHeight: 42 }} label={v && c[COUNT_KEY[v]] ? `${l} (${c[COUNT_KEY[v]]})` : l} />)}
+          {TABS.map(([v, l]) => <Tab key={v} value={v} icon={v === 'escalated' ? <ReportProblemOutlinedIcon /> : v === 'resolved' ? <TaskAltOutlinedIcon /> : v === 'closed' ? <LockOutlinedIcon /> : v === 'open' || v === 'in_progress' ? <PendingActionsOutlinedIcon /> : <ListAltOutlinedIcon />} iconPosition="start" sx={{ textTransform: 'none', minHeight: 42 }} label={v && c[COUNT_KEY[v]] ? `${l} (${c[COUNT_KEY[v]]})` : l} />)}
         </Tabs>
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
-          <TextField placeholder="Search subject or ticket #" value={q} onChange={reset(setQ)} sx={{ flex: '1 1 220px', maxWidth: 320 }} inputProps={{ 'aria-label': 'Search tickets' }} />
-          <TextField select value={level} onChange={reset(setLevel)} sx={{ width: 170 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by level' }}><MenuItem value="">All levels</MenuItem><MenuItem value="1">Level 1 (agents)</MenuItem><MenuItem value="2">Level 2 (senior)</MenuItem><MenuItem value="breached">Past deadline</MenuItem></TextField>
-          <TextField select value={priority} onChange={reset(setPriority)} sx={{ width: 150 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by priority' }}><MenuItem value="">All priorities</MenuItem>{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
-          <TextField select value={category} onChange={reset(setCategory)} sx={{ width: 190 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by category' }}><MenuItem value="">All categories</MenuItem>{CATEGORIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</TextField>
-          <TextField select value={assignee} onChange={reset(setAssignee)} sx={{ width: 170 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by assignee' }}><MenuItem value="">Anyone</MenuItem><MenuItem value="none">Unassigned</MenuItem>{(agents.data || []).map((a) => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}</TextField>
+          <AppTextField placeholder="Search subject or ticket #" value={q} onChange={reset(setQ)} sx={{ flex: '1 1 220px', maxWidth: 320 }} inputProps={{ 'aria-label': 'Search tickets' }} InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon /></InputAdornment> }} />
+          <AppTextField select value={level} onChange={reset(setLevel)} sx={{ width: 170 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by level' }}><MenuItem value="">All levels</MenuItem><MenuItem value="1">Level 1 (agents)</MenuItem><MenuItem value="2">Level 2 (senior)</MenuItem><MenuItem value="breached">Past deadline</MenuItem></AppTextField>
+          <AppTextField select value={priority} onChange={reset(setPriority)} sx={{ width: 150 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by priority' }}><MenuItem value="">All priorities</MenuItem>{PRIORITIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</AppTextField>
+          <AppTextField select value={category} onChange={reset(setCategory)} sx={{ width: 190 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by category' }}><MenuItem value="">All categories</MenuItem>{CATEGORIES.map(([v, l]) => <MenuItem key={v} value={v}>{l}</MenuItem>)}</AppTextField>
+          <AppTextField select value={assignee} onChange={reset(setAssignee)} sx={{ width: 170 }} SelectProps={{ displayEmpty: true }} inputProps={{ 'aria-label': 'Filter by assignee' }}><MenuItem value="">Anyone</MenuItem><MenuItem value="none">Unassigned</MenuItem>{(agents.data || []).map((a) => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}</AppTextField>
         </Box>
         {list.error && <Alert severity="error" sx={{ mb: 2 }}>{list.error.message}</Alert>}
         <AppDataTable loading={list.loading && !list.data} rows={list.data} onRowClick={(t) => navigate(`/desk/${t.id}`)} empty={{ title: 'No tickets match', message: 'Change the filters or wait for new tickets.' }}
@@ -67,7 +74,14 @@ export default function Desk() {
             { key: 'dueAt', label: 'Resolve by', render: (t) => <DueChip ticket={t} /> },
             { key: 'lastActivityAt', label: 'Last update', render: (t) => ago(t.lastActivityAt) }
           ]} />
-        <CustomPagination meta={list.meta} onPage={setPage} />
+        {list.meta && list.meta.total > 0 && <CustomPagination
+          page={list.meta.page}
+          totalPages={list.meta.pages}
+          totalCount={list.meta.total}
+          pageSize={list.meta.limit}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => { setLimit(n); setPage(1); }}
+        />}
       </AppSectionCard>
     </>
   );

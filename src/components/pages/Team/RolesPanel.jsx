@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Alert, Button, Chip, Tooltip } from '@mui/material';
-import { AppDataTable, AppConfirmDialog } from '../../common';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { AppDataTable, AppConfirmDialog, CustomPagination } from '../../common';
 import RoleDialog from './RoleDialog';
 import { useApi, useToast } from '../../../hooks';
 import { roleService } from '../../../services';
@@ -12,21 +15,27 @@ export default function RolesPanel() {
   const [editing, setEditing] = useState(null); // null = closed, {} = new, role = edit
   const [removing, setRemoving] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   const remove = async () => {
     setBusy(true);
     try { await roleService.deleteRole(removing.id); toast.success('Role deleted.'); setRemoving(null); roles.reload(); } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
   const total = catalog.data ? catalog.data.permissions.filter((p) => p.assignable).length : 0;
+  const rows = roles.data || [];
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <span style={{ fontSize: 13, color: '#64748b' }}>Enterprise Admin can do everything. Create other roles that only see and do what that kind of person needs.</span>
-        <Button variant="contained" onClick={() => setEditing({})}>New role</Button>
+        <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setEditing({})}>New role</Button>
       </div>
       {roles.error && <Alert severity="error" sx={{ mb: 2 }}>{roles.error.message}</Alert>}
-      <AppDataTable loading={roles.loading && !roles.data} rows={roles.data}
+      <AppDataTable loading={roles.loading && !roles.data} rows={roles.data ? pageRows : roles.data}
         columns={[
           { key: 'name', label: 'Role', render: (r) => <><b>{r.name}</b> {r.isSystem && <Chip size="small" label="Built-in" sx={{ ml: 0.5, height: 20 }} />}</> },
           { key: 'description', label: 'Description', render: (r) => r.description || '–' },
@@ -34,10 +43,19 @@ export default function RolesPanel() {
           { key: 'permissions', label: 'Access', render: (r) => (r.isSystem ? 'Everything' : `${r.permissions.filter((p) => !catalog.data || catalog.data.permissions.some((c) => c.code === p && c.assignable)).length} of ${total || '…'} permissions`) },
           { key: 'act', label: '', align: 'right', render: (r) => (r.isSystem ? null : (
             <>
-              <Button size="small" onClick={() => setEditing(r)}>Edit</Button>
-              <Tooltip title={r.memberCount ? 'Move its members to another role first' : ''}><span><Button size="small" color="error" disabled={r.memberCount > 0} onClick={() => setRemoving(r)}>Delete</Button></span></Tooltip>
+              <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(r)}>Edit</Button>
+              <Tooltip title={r.memberCount ? 'Move its members to another role first' : ''}><span><Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} disabled={r.memberCount > 0} onClick={() => setRemoving(r)}>Delete</Button></span></Tooltip>
             </>)) }
         ]} />
+      {roles.data && rows.length > 0 && <CustomPagination
+        page={currentPage}
+        totalPages={totalPages}
+        totalCount={rows.length}
+        pageSize={pageSize}
+        pageSizeOptions={[5, 10, 20, 50]}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+      />}
       <RoleDialog open={!!editing} role={editing && editing.id ? editing : null} catalog={catalog.data} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); roles.reload(); }} />
       <AppConfirmDialog open={!!removing} danger busy={busy} title="Delete this role?" confirmLabel="Delete" message={removing ? `"${removing.name}" will be removed.` : ''} onConfirm={remove} onClose={() => setRemoving(null)} />
     </>

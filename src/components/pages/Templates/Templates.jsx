@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Chip, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import { AppPageHeader, AppDataTable, AppConfirmDialog } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { templateService } from '../../../services';
@@ -20,12 +24,12 @@ export default function Templates() {
     setBusy(true);
     try { await templateService.deleteTemplate(removing.id); toast.success('Template deleted.'); setRemoving(null); reload(); } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
-  const create = <Button variant="contained" onClick={() => navigate('/templates/new')}>New template</Button>;
+  const create = <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => navigate('/templates/new')}>New template</Button>;
   return (
     <>
       <AppPageHeader title="Templates" subtitle="Reusable messages with {placeholders}. Send one by its id: POST /v1/messages with templateId and variables." actions={write && create} />
       <ToggleButtonGroup size="small" exclusive value={channel} onChange={(e, v) => setChannel(v || '')} sx={{ mb: 2 }} aria-label="Channel filter">
-        <ToggleButton value="" sx={{ px: 1.75 }}>All</ToggleButton><ToggleButton value="email" sx={{ px: 1.75 }}>Email</ToggleButton><ToggleButton value="inapp" sx={{ px: 1.75 }}>In-app</ToggleButton>
+        <ToggleButton value="" sx={{ px: 1.75 }}>All</ToggleButton><ToggleButton value="email" sx={{ px: 1.75 }}><EmailOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />Email</ToggleButton><ToggleButton value="inapp" sx={{ px: 1.75 }}><NotificationsOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />In-app</ToggleButton>
       </ToggleButtonGroup>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
       <AppDataTable loading={loading} rows={data} onRowClick={(t) => navigate(`/templates/${t.id}`)}
@@ -44,7 +48,7 @@ export default function Templates() {
           { key: 'subject', label: 'Subject / title', render: (t) => t.subject || '–' },
           { key: 'ph', label: 'Placeholders', render: (t) => (t.placeholders.length ? t.placeholders.map((p) => <span key={p.key} className="mono" style={{ marginRight: 6 }}>{`{${p.key}}`}</span>) : '–') },
           { key: 'updatedAt', label: 'Updated', render: (t) => dateTime(t.updatedAt) },
-          { key: 'act', label: '', align: 'right', render: (t) => write && <Button size="small" color="error" onClick={(e) => { e.stopPropagation(); setRemoving(t); }}>Delete</Button> }
+          { key: 'act', label: '', align: 'right', render: (t) => write && <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={(e) => { e.stopPropagation(); setRemoving(t); }}>Delete</Button> }
         ]} />
       <AppConfirmDialog open={!!removing} danger busy={busy} title="Delete this template?" confirmLabel="Delete"
         message={removing ? `"${removing.name}" will be removed. Messages already sent keep their text. API calls using templateId ${removing.id} will fail.` : ''} onConfirm={remove} onClose={() => setRemoving(null)} />

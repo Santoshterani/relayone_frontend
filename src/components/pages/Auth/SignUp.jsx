@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { TextField, Alert, Link, Box, Checkbox, FormControlLabel, FormHelperText, Typography } from '@mui/material';
+import { Alert, Link, Box, Checkbox, FormControlLabel, FormHelperText, Typography } from '@mui/material';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
+import AppTextField from '../../common/AppTextField';
 import AuthLayout from './AuthLayout';
 import PasswordField from './PasswordField';
 import useForm, { check, collect } from './useForm';
@@ -31,15 +33,15 @@ export default function SignUp() {
     <AuthLayout title="Create your account" subtitle="Start in the sandbox. No card needed." footer={<>Already have an account? <Link component={RouterLink} to="/signin">Sign in</Link></>}>
       <Box component="form" onSubmit={onSubmit} noValidate sx={{ display: 'grid', gap: 2 }}>
         {form.formError && <Alert severity="error">{form.formError}</Alert>}
-        <TextField label="Company name" autoFocus {...form.field('companyName')} />
-        <TextField label="Your name" autoComplete="name" {...form.field('name')} />
-        <TextField label="Work email" type="email" autoComplete="email" {...form.field('email')} />
+        <AppTextField label="Company name" autoFocus {...form.field('companyName')} />
+        <AppTextField label="Your name" autoComplete="name" {...form.field('name')} />
+        <AppTextField label="Work email" type="email" autoComplete="email" {...form.field('email')} />
         <PasswordField label="Password" autoComplete="new-password" {...form.field('password')} helperText={form.errors.password || 'At least 8 characters with a letter and a number.'} />
         <Box>
           <FormControlLabel control={<Checkbox checked={form.values.acceptTerms} onChange={form.set('acceptTerms')} />} label="I accept the Terms of Service" />
           {form.errors.acceptTerms && <FormHelperText error>{form.errors.acceptTerms}</FormHelperText>}
         </Box>
-        <AppFormActions submitLabel="Create account" busy={form.busy} align="stretch" color="secondary" />
+        <AppFormActions submitLabel="Create account" submitIcon={<PersonAddAlt1OutlinedIcon />} busy={form.busy} align="stretch" color="secondary" />
       </Box>
     </AuthLayout>
   );

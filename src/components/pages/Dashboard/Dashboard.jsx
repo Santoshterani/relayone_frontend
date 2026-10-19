@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 import { Alert, Box, Button, Typography, Chip, Link, LinearProgress } from '@mui/material';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppMetricCard, AppDataTable, AppStatusChip, AppSkeletonLoader, AppEmptyState, DonutChart, BarChart } from '../../common';
 import DailyChart from './DailyChart';
@@ -10,7 +15,7 @@ import { money, money4, dateTime } from '../../../utils/format';
 
 /** The sentence that tells the enterprise where it stands in onboarding. */
 function AccountBanner({ account, can }) {
-  const link = (to, label) => <Button component={RouterLink} to={to} size="small" color="inherit" sx={{ fontWeight: 600 }}>{label}</Button>;
+  const link = (to, label) => <Button component={RouterLink} to={to} size="small" color="inherit" startIcon={<ArrowForwardOutlinedIcon />} sx={{ fontWeight: 600 }}>{label}</Button>;
   const left = Math.max(account.sandboxLimit - account.sandboxSent, 0);
   switch (account.status) {
     case 'sandbox': return <Alert severity="warning" sx={{ mb: 2 }} action={can('enterprise.read') && link('/profile', account.profileComplete ? 'Submit for review' : 'Complete profile')}>
@@ -28,7 +33,7 @@ export default function Dashboard() {
   const { data, loading, error, reload } = useApi(() => dashboardService.getDashboard(), []);
   if (user.isSuperAdmin) return <Navigate to="/overview" replace />;
   if (loading) return <><AppPageHeader title="Dashboard" /><AppSkeletonLoader variant="card" /></>;
-  if (error) return <><AppPageHeader title="Dashboard" /><Alert severity="error" action={<Button color="inherit" onClick={reload}>Retry</Button>}>{error.message}</Alert></>;
+  if (error) return <><AppPageHeader title="Dashboard" /><Alert severity="error" action={<Button color="inherit" startIcon={<RefreshOutlinedIcon />} onClick={reload}>Retry</Button>}>{error.message}</Alert></>;
 
   const { account, wallet, plan, stats, setup } = data;
   const doneCount = setup.steps.filter((s) => s.done).length;
@@ -37,7 +42,7 @@ export default function Dashboard() {
     <>
       <AppPageHeader title="Dashboard" subtitle={account.name} />
       <AccountBanner account={account} can={can} />
-      {wallet && wallet.lowBalance && <Alert severity="warning" sx={{ mb: 2 }} action={can('wallet.topup') && <Button component={RouterLink} to="/wallet" size="small" color="inherit" sx={{ fontWeight: 600 }}>Top up</Button>}>Wallet balance {money(wallet.balance)} is below your alert level of {money(wallet.threshold)}.</Alert>}
+      {wallet && wallet.lowBalance && <Alert severity="warning" sx={{ mb: 2 }} action={can('wallet.topup') && <Button component={RouterLink} to="/wallet" size="small" color="inherit" startIcon={<AccountBalanceWalletOutlinedIcon />} sx={{ fontWeight: 600 }}>Top up</Button>}>Wallet balance {money(wallet.balance)} is below your alert level of {money(wallet.threshold)}.</Alert>}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         {wallet && <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Wallet balance" value={money(wallet.balance)} tone={wallet.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(wallet.threshold)}`} /></Grid>}
@@ -79,7 +84,7 @@ export default function Dashboard() {
       )}
 
       {!setup.complete && (
-        <AppSectionCard title="Get set up" subtitle={`${doneCount} of ${setup.steps.length} steps done`}>
+        <AppSectionCard title="Get set up" icon={<ChecklistOutlinedIcon />} subtitle={`${doneCount} of ${setup.steps.length} steps done`}>
           <LinearProgress variant="determinate" value={(doneCount / setup.steps.length) * 100} sx={{ mb: 1.5, height: 6, borderRadius: 3 }} />
           {setup.steps.map((s) => (
             <Box key={s.key} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
@@ -91,7 +96,7 @@ export default function Dashboard() {
       )}
 
       {stats && (
-        <AppSectionCard title="Recent messages" actions={can('messages.read') && <Link component={RouterLink} to="/messages">View all</Link>}>
+        <AppSectionCard title="Recent messages" icon={<MailOutlineIcon />} actions={can('messages.read') && <Link component={RouterLink} to="/messages">View all</Link>}>
           <AppDataTable rows={stats.recent} empty={{ title: 'No messages yet', message: 'Create an API key and send your first message with POST /v1/messages.' }}
             columns={[
               { key: 'to', label: 'To' }, { key: 'channel', label: 'Channel' },

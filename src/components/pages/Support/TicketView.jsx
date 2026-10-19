@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
-import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Link, MenuItem, Paper, Switch, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Link, MenuItem, Paper, Switch, Typography } from '@mui/material';
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
+import EscalatorWarningOutlinedIcon from '@mui/icons-material/EscalatorWarningOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import ReplayOutlinedIcon from '@mui/icons-material/ReplayOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import AppTextField from '../../common/AppTextField';
 import { AppStatusChip, AppSectionCard, AppCircularLoader, AppConfirmDialog } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { supportService } from '../../../services';
@@ -28,9 +37,9 @@ function EscalateDialog({ open, onClose, onSubmit }) {
       <DialogTitle sx={{ fontSize: 16 }}>Escalate to the senior level</DialogTitle>
       <DialogContent sx={{ pt: '8px !important' }}>
         <Alert severity="warning" sx={{ mb: 2 }}>Priority becomes Critical, the resolve-by time restarts (4 hours) and a senior agent takes over.</Alert>
-        <TextField label="Reason (internal, the enterprise does not see it)" multiline minRows={3} autoFocus value={reason} onChange={(e) => { setReason(e.target.value); setErr(''); }} error={!!err} helperText={err} />
+        <AppTextField label="Reason (internal, the enterprise does not see it)" multiline minRows={3} autoFocus value={reason} onChange={(e) => { setReason(e.target.value); setErr(''); }} error={!!err} helperText={err} />
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" color="error" onClick={go} disabled={busy}>Escalate</Button></DialogActions>
+      <DialogActions sx={{ px: 3, pb: 2 }}><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" color="error" startIcon={<EscalatorWarningOutlinedIcon />} onClick={go} disabled={busy}>Escalate</Button></DialogActions>
     </Dialog>
   );
 }
@@ -56,7 +65,7 @@ export default function TicketView({ staff }) {
 
   return (
     <>
-      <Link component={RouterLink} to={back} underline="hover" sx={{ fontSize: 13 }}>← {staff ? 'Support desk' : 'Support'}</Link>
+      <Link component={RouterLink} to={back} underline="hover" sx={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}><ArrowBackOutlinedIcon fontSize="small" />{staff ? 'Support desk' : 'Support'}</Link>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', my: 1.5 }}>
         <Typography variant="h1">#{tk.id} {tk.subject}</Typography>
         <AppStatusChip status={tk.status} /><PriorityChip priority={tk.priority} /><LevelChip ticket={tk} /><DueChip ticket={tk} />
@@ -70,33 +79,33 @@ export default function TicketView({ staff }) {
       {dueInfo(tk) && dueInfo(tk).late && <Alert severity="error" sx={{ mb: 2 }}>This ticket is past its resolve-by time ({dueInfo(tk).text}).</Alert>}
 
       {staff && (
-        <AppSectionCard title="Actions">
+        <AppSectionCard title="Actions" icon={<TuneOutlinedIcon />}>
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             {can('support.assign') && !closed && (
-              <TextField select size="small" label="Assigned to" value={tk.assignee ? tk.assignee.id : ''} sx={{ minWidth: 200, width: 200 }} disabled={busy}
+              <AppTextField select size="small" label="Assigned to" value={tk.assignee ? tk.assignee.id : ''} sx={{ minWidth: 200, width: 200 }} disabled={busy}
                 onChange={(e) => run(() => supportService.assign(id, e.target.value || null), 'Assignment saved.')}>
                 <MenuItem value="">Unassigned</MenuItem>
                 {(agents.data || []).map((a) => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
-              </TextField>
+              </AppTextField>
             )}
-            {can('support.escalate') && ['open', 'in_progress'].includes(tk.status) && <Button color="error" variant="outlined" disabled={busy} onClick={() => setEscalating(true)}>Escalate to senior</Button>}
-            {can('support.resolve') && live && <Button variant="contained" color="success" disabled={busy} onClick={() => setResolving(true)}>Resolve</Button>}
-            {can('support.resolve') && tk.status === 'resolved' && <><Button variant="outlined" disabled={busy} onClick={() => run(() => supportService.reopen(id), 'Ticket reopened.')}>Reopen</Button><Button variant="outlined" disabled={busy} onClick={() => run(() => supportService.close(id), 'Ticket closed.')}>Close ticket</Button></>}
+            {can('support.escalate') && ['open', 'in_progress'].includes(tk.status) && <Button color="error" variant="outlined" startIcon={<EscalatorWarningOutlinedIcon />} disabled={busy} onClick={() => setEscalating(true)}>Escalate to senior</Button>}
+            {can('support.resolve') && live && <Button variant="contained" color="success" startIcon={<TaskAltOutlinedIcon />} disabled={busy} onClick={() => setResolving(true)}>Resolve</Button>}
+            {can('support.resolve') && tk.status === 'resolved' && <><Button variant="outlined" startIcon={<ReplayOutlinedIcon />} disabled={busy} onClick={() => run(() => supportService.reopen(id), 'Ticket reopened.')}>Reopen</Button><Button variant="outlined" startIcon={<LockOutlinedIcon />} disabled={busy} onClick={() => run(() => supportService.close(id), 'Ticket closed.')}>Close ticket</Button></>}
             {!can('support.resolve') && !can('support.escalate') && !can('support.assign') && <Chip size="small" label="You can view and reply on this ticket" />}
           </Box>
         </AppSectionCard>
       )}
 
-      <AppSectionCard title="Conversation">
+      <AppSectionCard title="Conversation" icon={<ForumOutlinedIcon />}>
         <Box sx={{ maxHeight: 460, overflowY: 'auto', pr: 0.5 }}>{tk.messages.map((m) => <Bubble key={m.id} m={m} />)}</Box>
         {closed ? <Alert severity="info" sx={{ mt: 2 }}>This ticket is closed. Raise a new one if the problem comes back.</Alert> : (!staff || can('support.reply')) && (
           <Box sx={{ mt: 2 }}>
-            <TextField multiline minRows={3} placeholder={internal ? 'Internal note (the enterprise cannot see this)' : 'Write a reply…'} value={text} onChange={(e) => setText(e.target.value)} inputProps={{ 'aria-label': 'Reply' }} />
+            <AppTextField multiline minRows={3} placeholder={internal ? 'Internal note (the enterprise cannot see this)' : 'Write a reply…'} value={text} onChange={(e) => setText(e.target.value)} inputProps={{ 'aria-label': 'Reply' }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1, flexWrap: 'wrap' }}>
               <Box>{staff && <FormControlLabel control={<Switch checked={internal} onChange={(e) => setInternal(e.target.checked)} />} label="Internal note" />}</Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                {!staff && tk.status === 'resolved' && <Button disabled={busy} onClick={() => run(() => supportService.closeMine(id), 'Ticket closed.')}>Close ticket</Button>}
-                <Button variant="contained" disabled={busy || text.trim().length < 2} onClick={send}>{internal ? 'Add note' : 'Send reply'}</Button>
+                {!staff && tk.status === 'resolved' && <Button startIcon={<LockOutlinedIcon />} disabled={busy} onClick={() => run(() => supportService.closeMine(id), 'Ticket closed.')}>Close ticket</Button>}
+                <Button variant="contained" startIcon={<SendOutlinedIcon />} disabled={busy || text.trim().length < 2} onClick={send}>{internal ? 'Add note' : 'Send reply'}</Button>
               </Box>
             </Box>
           </Box>
