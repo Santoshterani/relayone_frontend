@@ -50,6 +50,7 @@ export default function Messages() {
           { key: 'channel', label: 'Channel', render: (m) => (m.channel === 'email' ? 'Email' : 'In-app') },
           { key: 'subject', label: 'Subject', render: (m) => m.subject || '–' },
           { key: 'status', label: 'Status', render: (m) => <AppStatusChip status={m.status} /> },
+          { key: 'attempts', label: 'Tries', align: 'right', render: (m) => (m.attempts > 1 || m.nextRetryAt ? <span title={m.nextRetryAt ? `Next retry ${dateTime(m.nextRetryAt)}` : undefined}>{m.attempts}{m.nextRetryAt ? ' · retrying' : ''}</span> : m.attempts) },
           { key: 'cost', label: 'Cost', align: 'right', render: (m) => money4(m.cost) }
         ]} />
       {meta && meta.total > 0 && <CustomPagination

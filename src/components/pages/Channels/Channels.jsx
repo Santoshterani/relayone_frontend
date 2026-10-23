@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Chip, LinearProgress, MenuItem, Tab, Tabs, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, FormControlLabel, LinearProgress, MenuItem, Switch, Tab, Tabs, Typography } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import RuleOutlinedIcon from '@mui/icons-material/RuleOutlined';
 import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppSkeletonLoader, AppStatusChip, AppConfirmDialog } from '../../common';
@@ -118,6 +119,57 @@ function EmailCard({ data, canWrite, onChanged }) {
   );
 }
 
+const human = (sec) => (sec < 60 ? `${sec}s` : sec < 3600 ? `${Math.round(sec / 60 * 10) / 10}m` : `${Math.round(sec / 360) / 10}h`);
+/** The waits the worker will use, same rule as the backend: fixed = same gap, growing = doubles each time, never above the longest wait. */
+export const retryPlan = (r) => Array.from({ length: r.maxRetries }, (_, i) => Math.min(r.gapMode === 'fixed' ? r.firstDelaySeconds : r.firstDelaySeconds * 2 ** i, r.maxWaitSeconds));
+
+function RulesCard({ data, canWrite, onChanged }) {
+  const toast = useToast();
+  const rules = data.email.rules; const c = rules.ceilings;
+  const toForm = (r) => ({ maxRetries: String(r.maxRetries), firstDelaySeconds: String(r.firstDelaySeconds), gapMode: r.gapMode, maxWaitMinutes: String(Math.round(r.maxWaitSeconds / 60 * 100) / 100), perMinuteLimit: r.perMinuteLimit == null ? '' : String(r.perMinuteLimit), alertsEnabled: r.alertsEnabled });
+  const [f, setF] = useState(toForm(rules)); const [errors, setErrors] = useState({}); const [busy, setBusy] = useState(false);
+  useEffect(() => { setF(toForm(rules)); setErrors({}); }, [rules]); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (k) => (e) => { setF({ ...f, [k]: e.target.value }); setErrors({ ...errors, [k]: undefined }); };
+  const int = (v) => Number.isInteger(Number(v)) && v !== '';
+  const parsed = { maxRetries: Number(f.maxRetries), firstDelaySeconds: Number(f.firstDelaySeconds), gapMode: f.gapMode, maxWaitSeconds: Math.round(Number(f.maxWaitMinutes) * 60) };
+  const valid = int(f.maxRetries) && int(f.firstDelaySeconds) && f.maxWaitMinutes !== '' && parsed.maxRetries >= 0 && parsed.maxRetries <= 20 && parsed.firstDelaySeconds >= 1 && parsed.maxWaitSeconds >= 1;
+  const plan = valid ? retryPlan(parsed) : [];
+  const save = async (e) => {
+    e.preventDefault();
+    const err = {};
+    if (!int(f.maxRetries) || parsed.maxRetries < 0 || parsed.maxRetries > c.retryCeiling) err.maxRetries = `Enter a whole number from 0 to ${c.retryCeiling}.`;
+    if (!int(f.firstDelaySeconds) || parsed.firstDelaySeconds < 1 || parsed.firstDelaySeconds > 86400) err.firstDelaySeconds = 'Enter seconds, 1 or more.';
+    if (f.maxWaitMinutes === '' || !(Number(f.maxWaitMinutes) > 0) || Number(f.maxWaitMinutes) > c.retryWaitCeilingMinutes) err.maxWaitMinutes = `Enter minutes from 1 to ${c.retryWaitCeilingMinutes}.`;
+    else if (parsed.maxWaitSeconds < parsed.firstDelaySeconds) err.maxWaitMinutes = 'The longest wait must be at least the first retry delay.';
+    if (f.perMinuteLimit !== '' && (!int(f.perMinuteLimit) || Number(f.perMinuteLimit) < 1 || Number(f.perMinuteLimit) > c.perMinuteCeiling)) err.perMinuteLimit = `Enter a whole number from 1 to ${c.perMinuteCeiling}, or leave empty.`;
+    if (Object.keys(err).length) { setErrors(err); return; }
+    setBusy(true);
+    try { await channelService.saveRules({ ...parsed, perMinuteLimit: f.perMinuteLimit === '' ? null : Number(f.perMinuteLimit), alertsEnabled: f.alertsEnabled }); toast.success('Sending rules saved. They apply to the next email.'); onChanged(); }
+    catch (e2) { const fe = e2.fieldErrors(); if (Object.keys(fe).length) setErrors({ ...fe, maxWaitMinutes: fe.maxWaitSeconds || fe.maxWaitMinutes }); else toast.error(e2.message); } finally { setBusy(false); }
+  };
+  return (
+    <AppSectionCard title="Sending rules" icon={<RuleOutlinedIcon />} sx={{ mt: 2 }} actions={<Chip size="small" variant="outlined" label={rules.customised ? 'Custom rules' : 'Platform defaults'} />}
+      subtitle="Failed emails are retried automatically, so nobody has to watch the logs. Wrong addresses and wrong SMTP passwords are never retried, because retrying cannot help.">
+      <Box component="form" onSubmit={save} noValidate>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><AppTextField label="Automatic retries" type="number" value={f.maxRetries} onChange={set('maxRetries')} disabled={!canWrite} error={!!errors.maxRetries} helperText={errors.maxRetries || `0 = never retry. Up to ${c.retryCeiling}.`} inputProps={{ min: 0, max: c.retryCeiling }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><AppTextField label="First retry after (seconds)" type="number" value={f.firstDelaySeconds} onChange={set('firstDelaySeconds')} disabled={!canWrite} error={!!errors.firstDelaySeconds} helperText={errors.firstDelaySeconds || 'Wait before the first retry.'} inputProps={{ min: 1 }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><AppTextField select label="Gap between retries" value={f.gapMode} onChange={set('gapMode')} disabled={!canWrite} helperText="Growing doubles the wait each time."><MenuItem value="growing">Growing</MenuItem><MenuItem value="fixed">Always the same</MenuItem></AppTextField></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><AppTextField label="Longest wait (minutes)" type="number" value={f.maxWaitMinutes} onChange={set('maxWaitMinutes')} disabled={!canWrite} error={!!errors.maxWaitMinutes} helperText={errors.maxWaitMinutes || `A gap never gets longer than this. Up to ${c.retryWaitCeilingMinutes}.`} inputProps={{ min: 1, step: 'any' }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><AppTextField label="Sending speed (emails per minute)" type="number" value={f.perMinuteLimit} onChange={set('perMinuteLimit')} disabled={!canWrite} placeholder={String(c.perMinuteCeiling)} error={!!errors.perMinuteLimit} helperText={errors.perMinuteLimit || `Extra emails wait their turn. Empty = platform maximum (${c.perMinuteCeiling}).`} inputProps={{ min: 1, max: c.perMinuteCeiling }} /></Grid>
+          <Grid size={{ xs: 12, md: 9 }} sx={{ display: 'flex', alignItems: 'center' }}>
+            <FormControlLabel control={<Switch checked={f.alertsEnabled} onChange={(e) => setF({ ...f, alertsEnabled: e.target.checked })} disabled={!canWrite} />} label="Email the billing contact and admins when emails fail for good" />
+          </Grid>
+        </Grid>
+        <Alert severity="info" icon={false} sx={{ mt: 2 }} data-testid="retry-summary">
+          {!valid ? 'Fill in the rules to see the retry schedule.' : plan.length === 0 ? 'A failed email is not retried. It fails at once and the price is returned.' : `A failed email is tried again ${plan.length} time${plan.length === 1 ? '' : 's'}, after ${plan.map(human).join(', ')}. If it still fails, it is marked failed and the price is returned.`}
+        </Alert>
+        {canWrite && <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} sx={{ mt: 2 }} disabled={busy}>{busy ? 'Saving…' : 'Save rules'}</Button>}
+      </Box>
+    </AppSectionCard>
+  );
+}
+
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 function InappCard({ data, canWrite, onChanged }) {
@@ -191,7 +243,7 @@ export default function Channels() {
         <Tab value="inapp" icon={<NotificationsOutlinedIcon />} iconPosition="start" label="In-app" sx={{ textTransform: 'none' }} />
       </Tabs>
       {tab === 'email'
-        ? <EmailCard data={data} canWrite={can('channels.write')} onChanged={reload} />
+        ? <><EmailCard data={data} canWrite={can('channels.write')} onChanged={reload} /><RulesCard data={data} canWrite={can('channels.write')} onChanged={reload} /></>
         : <InappCard data={data} canWrite={can('channels.write')} onChanged={reload} />}
     </>
   );

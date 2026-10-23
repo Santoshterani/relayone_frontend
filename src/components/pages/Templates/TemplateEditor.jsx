@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Box, Button, MenuItem, Switch, Tab, Tabs, Typography, Paper, FormControlLabel } from '@mui/material';
+import { Alert, Box, Button, MenuItem, Tab, Tabs, Typography } from '@mui/material';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
@@ -13,12 +13,16 @@ import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppSkeletonLoader } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { templateService } from '../../../services';
-import { extractKeys, render } from '../../../utils/placeholders';
+import { extractKeys } from '../../../utils/placeholders';
 import EmailDesigner from './EmailDesigner';
 import ChannelText from './ChannelText';
+import LivePreview from './LivePreview';
+import PlaceholderTable from './PlaceholderTable';
 
 const blank = { name: '', channel: 'email', subject: '', body: '' };
-const blankVariants = { email: { mode: 'plain', design: null, html: '' }, whatsapp: '', telegram: '' };
+const blankVariants = { email: { mode: 'plain', design: null, html: '', htmlDirty: false }, whatsapp: '', telegram: '' };
+// An email saved in HTML mode has no builder design, so its HTML is the author's own. In builder mode the HTML follows the design.
+const loadEmail = (e) => ({ ...e, htmlDirty: e.mode === 'html' });
 
 export default function TemplateEditor() {
   const { id } = useParams();
@@ -42,7 +46,7 @@ export default function TemplateEditor() {
     setLoading(true);
     templateService.getTemplate(id).then(({ data }) => {
       setForm({ name: data.name, channel: data.channel, subject: data.subject, body: data.body });
-      setVariants({ email: data.variants.email, whatsapp: data.variants.whatsapp.body, telegram: data.variants.telegram.body });
+      setVariants({ email: loadEmail(data.variants.email), whatsapp: data.variants.whatsapp.body, telegram: data.variants.telegram.body });
       setMeta(Object.fromEntries(data.placeholders.map((p) => [p.key, { description: p.description, isRequired: p.required, defaultValue: p.defaultValue || '', sampleValue: p.sampleValue || '' }])));
     }).catch((e) => setLoadError(e.message)).finally(() => setLoading(false));
   }, [id, isNew]);
@@ -57,12 +61,12 @@ export default function TemplateEditor() {
   const [showText, setShowText] = useState(false);
   const inapp = form.channel === 'inapp';
   const designed = !inapp && em.mode !== 'plain';
+  const showPreview = tab === 'message' || tab === 'design';
 
   // live preview with sample values, else default, else the placeholder itself
   const values = Object.fromEntries(keys.map((k) => [k, m(k).sampleValue || m(k).defaultValue || '']));
   const filled = useMemo(() => Object.fromEntries(Object.entries(values).filter(([, v]) => v)), [JSON.stringify(values)]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (inapp && tab === 'design') setTab('message'); }, [inapp, tab]);
-  const previewSubject = render(form.subject, values); const previewBody = render(form.body, values);
 
   const validate = () => {
     const e = {};
@@ -87,7 +91,7 @@ export default function TemplateEditor() {
       if (data.placeholders.length) {
         await templateService.savePlaceholders(data.id, data.placeholders.map((p) => ({ key: p.key, description: m(p.key).description || '', isRequired: m(p.key).isRequired, defaultValue: m(p.key).defaultValue || '', sampleValue: m(p.key).sampleValue || '' })));
       }
-      if (!isNew) { setVariants({ email: data.variants.email, whatsapp: data.variants.whatsapp.body, telegram: data.variants.telegram.body }); }
+      if (!isNew) { setVariants({ email: loadEmail(data.variants.email), whatsapp: data.variants.whatsapp.body, telegram: data.variants.telegram.body }); }
       toast.success('Template saved.');
       if (isNew) navigate(`/templates/${data.id}`, { replace: true });
     } catch (err) {
@@ -111,7 +115,7 @@ export default function TemplateEditor() {
         <Tab value="telegram" icon={<TelegramIcon />} iconPosition="start" label="Telegram" />
       </Tabs>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, lg: tab === 'design' ? 12 : 7 }}>
+        <Grid size={{ xs: 12, lg: showPreview ? 7 : 12 }}>
           {tab === 'message' && (
           <AppSectionCard title={inapp ? 'Notification' : 'Basics'} subtitle={inapp ? 'What the user sees in the bell inside your app: a short title and a line of text.' : designed ? 'Name and channel. The subject and layout are on the Email design tab.' : 'Name, subject and body of a plain-text email. Choose Email design for a coloured layout.'}>
             <Box sx={{ display: 'grid', gap: 2 }}>
@@ -130,48 +134,20 @@ export default function TemplateEditor() {
           </AppSectionCard>
           )}
           {tab === 'design' && (
-            <AppSectionCard title="Email design" subtitle="Colours, layout and buttons for HTML email. Industry layouts (e-commerce, fintech…) are one click away.">
+            <AppSectionCard title="Email design" subtitle="Colours, layout and buttons for HTML email. What you build is also available as HTML in the Custom HTML tab.">
               {errors.design && <Alert severity="error" sx={{ mb: 2 }}>{errors.design}</Alert>}
               {designed && <Box sx={{ mb: 2 }}><AppTextField label="Email subject" required {...field('subject')} /></Box>}
-              <EmailDesigner value={em} onChange={(email) => { setVariants((s) => ({ ...s, email })); setErrors((s) => ({ ...s, design: undefined })); }} disabled={!write}
-                subject={form.subject} body={form.body} sampleValues={filled} catalog={catalog.data}
+              <EmailDesigner value={em} onChange={(email) => { setVariants((s) => ({ ...s, email })); setErrors((s) => ({ ...s, design: undefined })); }} disabled={!write} catalog={catalog.data}
                 onSample={({ subject, samples }) => { if (!form.subject.trim()) setForm((f) => ({ ...f, subject })); setMeta((s) => ({ ...s, ...Object.fromEntries(Object.entries(samples).map(([k, v]) => [k, { ...(s[k] || { description: '', isRequired: true, defaultValue: '' }), sampleValue: s[k] && s[k].sampleValue ? s[k].sampleValue : v }])) })); }} />
             </AppSectionCard>
           )}
           {tab === 'whatsapp' && <AppSectionCard title="WhatsApp"><ChannelText label="WhatsApp" value={variants.whatsapp} onChange={(v) => setVariants((s) => ({ ...s, whatsapp: v }))} max={1024} disabled={!write} sampleValues={values} bubbleColor="#d9fdd3" /></AppSectionCard>}
           {tab === 'telegram' && <AppSectionCard title="Telegram"><ChannelText label="Telegram" value={variants.telegram} onChange={(v) => setVariants((s) => ({ ...s, telegram: v }))} max={4096} disabled={!write} sampleValues={values} bubbleColor="#ffffff" /></AppSectionCard>}
 
-          <AppSectionCard title="Placeholders" subtitle="Found automatically in the subject, text, email design and WhatsApp or Telegram text. Describe each one so your team knows what to send.">
-            {keys.length === 0 ? <Typography color="text.secondary">No placeholders yet. Type <code>{'{name}'}</code> in the text above.</Typography> : (
-              <>
-                <Alert severity="info" sx={{ mb: 1.5 }}>At send time: the value from the API call is used; if missing, the default; if there is no default and the placeholder is required, the call is rejected with <code>422 missing_template_variables</code>.</Alert>
-                {keys.map((k) => (
-                  <Paper key={k} variant="outlined" sx={{ p: 1.5, mb: 1.25 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <span className="mono" style={{ fontWeight: 500 }}>{`{${k}}`}</span>
-                      <FormControlLabel sx={{ m: 0 }} label={<Typography variant="caption">{m(k).isRequired ? 'Required' : 'Optional'}</Typography>}
-                        control={<Switch size="small" checked={m(k).isRequired} onChange={(e) => setM(k, { isRequired: e.target.checked })} disabled={!write} inputProps={{ 'aria-label': `${k} required` }} />} />
-                    </Box>
-                    <Grid container spacing={1.5}>
-                      <Grid size={12}><AppTextField label="Description" value={m(k).description} onChange={(e) => setM(k, { description: e.target.value })} placeholder="What goes here?" disabled={!write} inputProps={{ 'aria-label': `Description of ${k}` }} /></Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}><AppTextField label="Default value" value={m(k).defaultValue} onChange={(e) => setM(k, { defaultValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Default of ${k}` }} /></Grid>
-                      <Grid size={{ xs: 12, sm: 6 }}><AppTextField label="Sample (preview only)" value={m(k).sampleValue} onChange={(e) => setM(k, { sampleValue: e.target.value })} disabled={!write} inputProps={{ 'aria-label': `Sample of ${k}` }} /></Grid>
-                    </Grid>
-                  </Paper>
-                ))}
-              </>
-            )}
-          </AppSectionCard>
+          <PlaceholderTable keys={keys} meta={m} setMeta={setM} disabled={!write} />
         </Grid>
-        {tab !== 'design' && <Grid size={{ xs: 12, lg: 5 }}>
-          <AppSectionCard title="Preview" subtitle="Uses the sample value, else the default.">
-            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.default' }} aria-live="polite">
-              <Typography variant="caption" color="text.secondary">{inapp ? 'Title' : 'Subject'}</Typography>
-              <Typography sx={{ fontWeight: 600, mb: 1.5 }}>{previewSubject || '–'}</Typography>
-              <Typography variant="caption" color="text.secondary">{inapp ? 'Text' : 'Body'}</Typography>
-              <Typography sx={{ whiteSpace: 'pre-wrap' }}>{previewBody || '–'}</Typography>
-            </Paper>
-          </AppSectionCard>
+        {showPreview && <Grid size={{ xs: 12, lg: 5 }}>
+          <LivePreview inapp={inapp} email={em} subject={form.subject} body={form.body} values={filled} />
           {!isNew && (
             <AppSectionCard title="Send with this template">
               <pre className="rl-code mono" style={{ margin: 0 }}>{`POST /v1/messages

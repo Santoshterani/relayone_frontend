@@ -1,4 +1,4 @@
-import { get, post } from '../utils/apiHandler';
+import { get, post, put } from '../utils/apiHandler';
 import http from '../utils/axios';
 import { PLATFORM } from '../constants';
 export const overview = () => get(`${PLATFORM}/overview`);
@@ -10,3 +10,5 @@ export const reactivate = (id) => post(`${PLATFORM}/enterprises/${id}/reactivate
 export const dashboard = () => get(`${PLATFORM}/dashboard`);
 export const reviewDocument = (id, type, decision, note) => post(`${PLATFORM}/enterprises/${id}/documents/${type}/review`, { decision, note });
 export const documentFile = async (id, type) => (await http.get(`${PLATFORM}/enterprises/${id}/documents/${type}/file`, { responseType: 'blob' })).data;
+export const getSettings = () => get(`${PLATFORM}/settings`);
+export const updateSettings = (body) => put(`${PLATFORM}/settings`, body);

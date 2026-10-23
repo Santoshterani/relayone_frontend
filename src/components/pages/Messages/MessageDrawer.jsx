@@ -29,7 +29,8 @@ export default function MessageDrawer({ id, onClose }) {
           {m.templateName && <Row label="Template">{m.templateName}</Row>}
           <Row label="Cost">{money4(m.cost)}{m.status === 'failed' ? ' (refunded)' : ''}</Row>
           <Row label="Attempts">{m.attempts}</Row>
-          {m.error && <Row label="Last error"><Typography color="error">{m.error}</Typography></Row>}
+          {m.nextRetryAt && <Row label="Next retry">{dateTime(m.nextRetryAt)}</Row>}
+          {m.error && <Row label={m.status === 'queued' ? 'Last problem' : 'Last error'}><Typography color={m.status === 'queued' ? 'warning.main' : 'error'}>{m.error}</Typography></Row>}
           <Divider sx={{ my: 1.5 }} />
           {m.subject && <Typography sx={{ fontWeight: 600, mb: 0.5 }}>{m.subject}</Typography>}
           <Box sx={{ whiteSpace: 'pre-wrap', bgcolor: 'background.default', p: 1.5, borderRadius: 1.5, mb: 2 }}>{m.body}</Box>

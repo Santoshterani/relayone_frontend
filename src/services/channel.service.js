@@ -7,3 +7,4 @@ export const testEmail = (to) => post(`${CHANNELS}/email/test`, { to });
 export const removeEmail = () => del(`${CHANNELS}/email`);
 export const emailUsage = () => get(`${MESSAGES}/email-usage`);
 export const saveInapp = (body) => put(`${CHANNELS}/inapp`, body);
+export const saveRules = (body) => put(`${CHANNELS}/email/rules`, body);

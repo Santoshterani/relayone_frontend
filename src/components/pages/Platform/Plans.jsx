@@ -6,17 +6,54 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
 import PriceChangeOutlinedIcon from '@mui/icons-material/PriceChangeOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import Grid from '@mui/material/Grid2';
 import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppSectionCard, AppEmptyState, AppSkeletonLoader } from '../../common';
 import { useApi, useToast } from '../../../hooks';
-import { planService, walletService } from '../../../services';
+import { planService, walletService, platformService } from '../../../services';
 import { money, money4 } from '../../../utils/format';
 import PlanDialog from './PlanDialog';
 
 const PRICES = [['email_own', 'Email, enterprise\'s own SMTP', 'We only run the queue, retries and tracking.'], ['email_shared', 'Email, shared RelayOne sender', 'Includes the sending itself.'], ['inapp', 'In-app notification', 'Delivered over the live connection or the inbox.']];
 
 /** Super Admin: the wallet price per message, and the prepaid plans (message buckets) enterprises can buy. */
+function Limits() {
+  const toast = useToast();
+  const { data, loading, error, reload } = useApi(() => platformService.getSettings(), []);
+  const [f, setF] = useState({}); const [errors, setErrors] = useState({}); const [busy, setBusy] = useState(false);
+  useEffect(() => { if (data) setF({ minWalletBalance: String(Number(data.minWalletBalance)), retryCeiling: String(data.retryCeiling), retryWaitCeilingMinutes: String(data.retryWaitCeilingMinutes), perMinuteCeiling: String(data.perMinuteCeiling) }); }, [data]);
+  const set = (k) => (e) => { setF({ ...f, [k]: e.target.value }); setErrors({ ...errors, [k]: undefined }); };
+  const save = async (e) => {
+    e.preventDefault();
+    const err = {};
+    if (f.minWalletBalance === '' || !(Number(f.minWalletBalance) >= 0 && Number(f.minWalletBalance) <= 1000)) err.minWalletBalance = 'Enter an amount from $0 to $1000.';
+    if (!Number.isInteger(Number(f.retryCeiling)) || Number(f.retryCeiling) < 0 || Number(f.retryCeiling) > 20) err.retryCeiling = 'Enter a whole number from 0 to 20.';
+    if (!Number.isInteger(Number(f.retryWaitCeilingMinutes)) || Number(f.retryWaitCeilingMinutes) < 1 || Number(f.retryWaitCeilingMinutes) > 10080) err.retryWaitCeilingMinutes = 'Enter minutes from 1 to 10080 (one week).';
+    if (!Number.isInteger(Number(f.perMinuteCeiling)) || Number(f.perMinuteCeiling) < 1 || Number(f.perMinuteCeiling) > 100000) err.perMinuteCeiling = 'Enter a whole number from 1 to 100000.';
+    if (Object.keys(err).length) { setErrors(err); return; }
+    setBusy(true);
+    try { await platformService.updateSettings({ minWalletBalance: Number(f.minWalletBalance), retryCeiling: Number(f.retryCeiling), retryWaitCeilingMinutes: Number(f.retryWaitCeilingMinutes), perMinuteCeiling: Number(f.perMinuteCeiling) }); toast.success('Settings saved.'); reload(); } catch (e2) { toast.error(e2.message); } finally { setBusy(false); }
+  };
+  if (loading && !data) return <AppSkeletonLoader variant="card" />;
+  if (error && !data) return <Alert severity="error">{error.message}</Alert>;
+  return (
+    <Box component="form" onSubmit={save} noValidate sx={{ display: 'grid', gap: 2 }}>
+      <AppSectionCard title="Minimum wallet balance" icon={<TuneOutlinedIcon />} subtitle="A wallet-paid message is accepted only if the wallet holds at least this much. Messages covered by a plan are not affected. Below it, the API answers 402 insufficient_balance.">
+        <AppTextField label="Minimum balance (USD)" type="number" value={f.minWalletBalance ?? ''} onChange={set('minWalletBalance')} error={!!errors.minWalletBalance} helperText={errors.minWalletBalance} inputProps={{ step: '0.01', min: 0 }} sx={{ maxWidth: 220 }} />
+      </AppSectionCard>
+      <AppSectionCard title="Email sending ceilings" subtitle="The most any enterprise can set in its own email sending rules. If you lower a ceiling, it applies at once, even to rules already saved.">
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <AppTextField label="Most automatic retries" type="number" value={f.retryCeiling ?? ''} onChange={set('retryCeiling')} error={!!errors.retryCeiling} helperText={errors.retryCeiling} inputProps={{ min: 0, max: 20 }} sx={{ width: 220 }} />
+          <AppTextField label="Longest wait between tries (minutes)" type="number" value={f.retryWaitCeilingMinutes ?? ''} onChange={set('retryWaitCeilingMinutes')} error={!!errors.retryWaitCeilingMinutes} helperText={errors.retryWaitCeilingMinutes} inputProps={{ min: 1 }} sx={{ width: 260 }} />
+          <AppTextField label="Fastest sending (emails per minute)" type="number" value={f.perMinuteCeiling ?? ''} onChange={set('perMinuteCeiling')} error={!!errors.perMinuteCeiling} helperText={errors.perMinuteCeiling} inputProps={{ min: 1 }} sx={{ width: 260 }} />
+        </Box>
+      </AppSectionCard>
+      <Box><Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</Button></Box>
+    </Box>
+  );
+}
+
 export default function Plans() {
   const toast = useToast();
   const prices = useApi(() => walletService.getPrices(), []);
@@ -41,7 +78,10 @@ export default function Plans() {
       <Tabs value={tab} onChange={(e, value) => setTab(value)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} aria-label="Plans and pricing sections">
         <Tab value="plans" icon={<SellOutlinedIcon />} iconPosition="start" label="Plans" sx={{ textTransform: 'none' }} />
         <Tab value="pricing" icon={<PriceChangeOutlinedIcon />} iconPosition="start" label="Pricing" sx={{ textTransform: 'none' }} />
+        <Tab value="limits" icon={<TuneOutlinedIcon />} iconPosition="start" label="Limits" sx={{ textTransform: 'none' }} />
       </Tabs>
+
+      {tab === 'limits' && <Limits />}
 
       {tab === 'pricing' && <AppSectionCard title="Wallet price per message" subtitle="Charged when an enterprise has no plan messages left. Changes apply to messages accepted from now on.">
         {prices.loading && !prices.data ? <AppSkeletonLoader variant="card" /> : prices.error && !prices.data ? <Alert severity="error">{prices.error.message}</Alert> : (
@@ -73,7 +113,7 @@ export default function Plans() {
                       </Box>
                       {plan.description && <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>{plan.description}</Typography>}
                       <Typography sx={{ fontSize: 24, fontWeight: 600 }}>{money(plan.price)}</Typography>
-                      <Typography variant="body2">{Number(plan.messages).toLocaleString()} messages</Typography>
+                      <Typography variant="body2">{Number(plan.messages).toLocaleString()} messages, valid for {plan.validityDays} days</Typography>
                       <Typography variant="caption" color="text.secondary">{money4(plan.perMessage)} per message</Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>Purchased {plan.purchases} times</Typography>
                     </CardContent>

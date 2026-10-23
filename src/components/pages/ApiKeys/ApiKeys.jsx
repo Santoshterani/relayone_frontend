@@ -61,6 +61,7 @@ export default function ApiKeys() {
   const [revoking, setRevoking] = useState(null);
   const [busy, setBusy] = useState(false);
   const write = can('apikeys.write');
+  const hasActive = !!data && data.some((k) => k.active);
 
   const revoke = async () => {
     setBusy(true);
@@ -75,8 +76,9 @@ export default function ApiKeys() {
 
   return (
     <>
-      <AppPageHeader title="API keys" subtitle="Your server uses a key to send messages. Keep keys secret and never put them in a browser or mobile app."
-        actions={write && <Button variant="contained" onClick={() => setCreating(true)} startIcon={<AddOutlinedIcon />}>Create key</Button>} />
+      <AppPageHeader title="API keys" subtitle="Your server uses a key to send messages. Keep it secret and never put it in a browser or mobile app. Each account has one active key."
+        actions={write && <Tooltip title={hasActive ? 'You already have an active key. Revoke it first to create a new one.' : ''}><span><Button variant="contained" disabled={hasActive} onClick={() => setCreating(true)} startIcon={<AddOutlinedIcon />}>Create key</Button></span></Tooltip>} />
+      {hasActive && write && <Alert severity="info" sx={{ mb: 2 }}>Lost your key? Keys are shown only once. Revoke the active key below, then create a new one. Update your server with the new key, because the old one stops working at once.</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
       <AppDataTable loading={loading} rows={data}
         empty={{ title: 'No API keys yet', message: write ? 'Create a key to start sending messages from your own backend.' : 'Ask an administrator to create a key.', action: write && <Button variant="contained" onClick={() => setCreating(true)} startIcon={<AddOutlinedIcon />}>Create key</Button> }}

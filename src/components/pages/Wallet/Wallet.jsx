@@ -71,9 +71,9 @@ export default function Wallet() {
         <Tab value="billing" icon={<ReceiptLongOutlinedIcon />} iconPosition="start" label="Billing" sx={{ textTransform: 'none' }} />
       </Tabs>
       {tab === 'wallet' && <>
-      {w.lowBalance && <Alert severity="warning" sx={{ mb: 2 }}>Your balance is below your alert level of {money(w.threshold)}. Sending stops when it reaches $0.</Alert>}
+      {w.lowBalance && <Alert severity="warning" sx={{ mb: 2 }}>Your balance is below your alert level of {money(w.threshold)}. Sending from the wallet stops when the balance is below the minimum of {money(w.minimumBalance)} (messages covered by a plan still go out).</Alert>}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, md: 4 }}><AppMetricCard label="Balance" value={money(w.balance, 4)} tone={w.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(w.threshold)}`} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}><AppMetricCard label="Balance" value={money(w.balance, 4)} tone={w.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(w.threshold)} · Minimum to send ${money(w.minimumBalance)}`} /></Grid>
         <Grid size={{ xs: 12, md: 8 }}>
           <AppSectionCard title="Wallet price per message" icon={<PriceChangeOutlinedIcon />} sx={{ mb: 0, height: '100%' }}>
             <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
@@ -92,8 +92,10 @@ export default function Wallet() {
         return (
           <>
             {exhausted && <Alert severity="warning" sx={{ mb: 2 }}>Your plan messages are used up. New messages are charged to your wallet at the normal price. Buy a plan below to get the plan rate again.</Alert>}
+            {p.buckets.some((b) => b.expired && b.lost > 0) && <Alert severity="info" sx={{ mb: 2 }}>A plan expired with unused messages, and they cannot be used any more. Messages are charged to your wallet at the normal price until you buy a new plan.</Alert>}
+            {live.some((b) => b.daysLeft <= 7) && <Alert severity="warning" sx={{ mb: 2 }}>A plan expires within {Math.max(...live.filter((b) => b.daysLeft <= 7).map((b) => b.daysLeft))} days. Use its messages or buy a new plan, because unused messages are lost on expiry.</Alert>}
             {low && <Alert severity="warning" sx={{ mb: 2 }}>Only {p.remaining.toLocaleString()} plan messages left. Buy another plan so you keep the plan rate. If you don't, messages after that are charged to your wallet.</Alert>}
-            <AppSectionCard title="Prepaid plans" icon={<Inventory2OutlinedIcon />} subtitle="Buy messages in bulk for a lower price per message. Plan messages are used first, then the wallet pays."
+            <AppSectionCard title="Prepaid plans" icon={<Inventory2OutlinedIcon />} subtitle="Buy messages in bulk for a lower price per message. Each plan is valid for a set number of days, like a prepaid pack. Unused messages are lost when it expires. Plan messages are used first, then the wallet pays."
               actions={<Box sx={{ textAlign: 'right' }}><Typography variant="caption" color="text.secondary">Plan messages left</Typography><Typography sx={{ fontSize: 20, fontWeight: 600 }} data-testid="plan-remaining">{p.remaining.toLocaleString()}</Typography></Box>}>
               {p.plans.length === 0 ? <Typography color="text.secondary">No plans are on sale right now.</Typography> : (
                 <Grid container spacing={2}>
@@ -103,7 +105,7 @@ export default function Wallet() {
                         <Typography sx={{ fontWeight: 600 }}>{pl.name}</Typography>
                         {pl.description && <Typography variant="caption" color="text.secondary">{pl.description}</Typography>}
                         <Typography sx={{ fontSize: 24, fontWeight: 600, mt: 1 }}>{money(pl.price)}</Typography>
-                        <Typography variant="body2">{Number(pl.messages).toLocaleString()} messages</Typography>
+                        <Typography variant="body2">{Number(pl.messages).toLocaleString()} messages, valid for {pl.validityDays} days</Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>{money4(pl.perMessage)} per message</Typography>
                         {topup && <Button variant="outlined" startIcon={<ShoppingCartOutlinedIcon />} sx={{ mt: 'auto' }} onClick={() => setBuying(pl)} aria-label={`Buy ${pl.name} plan`}>Buy plan</Button>}
                       </Paper>
@@ -115,13 +117,14 @@ export default function Wallet() {
                   <AppDataTable rows={p.buckets} columns={[
                     { key: 'planName', label: 'Plan', render: (b) => b.planName },
                     { key: 'purchasedAt', label: 'Bought', render: (b) => date(b.purchasedAt) },
+                    { key: 'expiresAt', label: 'Valid until', render: (b) => (b.expired ? <Chip size="small" color="error" variant="outlined" label={`Expired ${date(b.expiresAt)}`} sx={{ height: 22 }} /> : <Box><Typography variant="body2">{date(b.expiresAt)}</Typography><Typography variant="caption" color={b.daysLeft <= 7 ? 'warning.main' : 'text.secondary'}>{b.daysLeft} day{b.daysLeft === 1 ? '' : 's'} left</Typography></Box>) },
                     { key: 'pricePaid', label: 'Paid', align: 'right', render: (b) => money(b.pricePaid) },
                     { key: 'usage', label: 'Used', width: 220, render: (b) => (<Box><LinearProgress variant="determinate" value={(b.used / b.quota) * 100} sx={{ height: 6, borderRadius: 3, mb: 0.5 }} /><Typography variant="caption" color="text.secondary">{b.used.toLocaleString()} of {b.quota.toLocaleString()}</Typography></Box>) },
-                    { key: 'remaining', label: 'Left', align: 'right', render: (b) => (b.remaining === 0 ? <Chip size="small" label="Used up" sx={{ height: 22 }} /> : b.remaining.toLocaleString()) }
+                    { key: 'remaining', label: 'Left', align: 'right', render: (b) => (b.expired ? (b.lost > 0 ? <Chip size="small" label={`${b.lost.toLocaleString()} lost`} sx={{ height: 22 }} /> : <Chip size="small" label="Used up" sx={{ height: 22 }} />) : b.remaining === 0 ? <Chip size="small" label="Used up" sx={{ height: 22 }} /> : b.remaining.toLocaleString()) }
                   ]} />
                 </Box>)}
             </AppSectionCard>
-            <AppConfirmDialog open={!!buying} title={buying ? `Buy the ${buying.name} plan?` : ''} message={buying ? (cfg.provider === 'razorpay' ? `${money(buying.price)} (${inGateway(buying.price)}) for ${Number(buying.messages).toLocaleString()} messages. You will pay securely with Razorpay.` : `${money(buying.price)} for ${Number(buying.messages).toLocaleString()} messages. Demo mode: no card is charged.`) : ''}
+            <AppConfirmDialog open={!!buying} title={buying ? `Buy the ${buying.name} plan?` : ''} message={buying ? (cfg.provider === 'razorpay' ? `${money(buying.price)} (${inGateway(buying.price)}) for ${Number(buying.messages).toLocaleString()} messages, valid for ${buying.validityDays} days. You will pay securely with Razorpay.` : `${money(buying.price)} for ${Number(buying.messages).toLocaleString()} messages, valid for ${buying.validityDays} days. Demo mode: no card is charged.`) : ''}
               confirmLabel={busy === 'buy' ? 'Waiting for payment…' : cfg.provider === 'razorpay' ? 'Continue to payment' : 'Buy plan'} busy={busy === 'buy'} onConfirm={buyPlan} onClose={() => setBuying(null)} />
           </>);
       })()}
