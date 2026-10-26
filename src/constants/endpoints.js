@@ -8,6 +8,7 @@ export const DASHBOARD = '/api/dashboard';
 export const ENTERPRISE = { ROOT: '/api/enterprise', PROFILE: '/api/enterprise/profile', SUBMIT: '/api/enterprise/submit' };
 export const API_KEYS = '/api/api-keys';
 export const TEMPLATES = '/api/templates';
+export const EVENTS = '/api/events';
 export const CHANNELS = '/api/channels';
 export const MESSAGES = '/api/messages';
 export const WEBHOOKS = '/api/webhooks';

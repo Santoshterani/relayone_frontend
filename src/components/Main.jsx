@@ -8,6 +8,8 @@ import EnterpriseProfile from './pages/Enterprise/EnterpriseProfile';
 import ApiKeys from './pages/ApiKeys/ApiKeys';
 import Templates from './pages/Templates/Templates';
 import TemplateEditor from './pages/Templates/TemplateEditor';
+import Events from './pages/Events/Events';
+import EventEditor from './pages/Events/EventEditor';
 import Channels from './pages/Channels/Channels';
 import Messages from './pages/Messages/Messages';
 import Webhooks from './pages/Webhooks/Webhooks';
@@ -32,7 +34,7 @@ import { AppEmptyState } from './common';
 import { MSG } from '../constants';
 
 // Pages that exist so far. Everything else in the sidebar shows ComingSoon until its phase.
-const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/platform': Platform, '/pricing': Plans, '/overview': Overview, '/support': Support, '/desk': Desk, '/support-team': SupportTeam };
+const PAGES = { '/': Dashboard, '/profile': EnterpriseProfile, '/api-keys': ApiKeys, '/templates': Templates, '/events': Events, '/channels': Channels, '/messages': Messages, '/webhooks': Webhooks, '/wallet': Wallet, '/team': Team, '/platform': Platform, '/pricing': Plans, '/overview': Overview, '/support': Support, '/desk': Desk, '/support-team': SupportTeam };
 
 const home = (user) => (user.isSuperAdmin ? '/overview' : user.isStaff ? '/desk' : '/');
 
@@ -71,6 +73,8 @@ export default function Main() {
         })}
         <Route path="/support/:id" element={<Gate permission="tickets.read"><TicketView staff={false} /></Gate>} />
         <Route path="/desk/:id" element={<Gate permission="support.view"><TicketView staff /></Gate>} />
+        <Route path="/events/new" element={<Gate permission="templates.write"><EventEditor /></Gate>} />
+        <Route path="/events/:id" element={<Gate permission="templates.read"><EventEditor /></Gate>} />
         <Route path="/templates/new" element={<Gate permission="templates.write"><TemplateEditor /></Gate>} />
         <Route path="/templates/:id" element={<Gate permission="templates.read"><TemplateEditor /></Gate>} />
       </Route>

@@ -3,6 +3,7 @@ export * as dashboardService from './dashboard.service';
 export * as enterpriseService from './enterprise.service';
 export * as apiKeyService from './apiKey.service';
 export * as templateService from './template.service';
+export * as eventService from './event.service';
 export * as channelService from './channel.service';
 export * as messageService from './message.service';
 export * as webhookService from './webhook.service';
