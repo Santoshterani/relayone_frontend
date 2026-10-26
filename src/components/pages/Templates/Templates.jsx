@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Chip, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { AppPageHeader, AppDataTable, AppConfirmDialog } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { templateService } from '../../../services';
@@ -40,13 +41,26 @@ export default function Templates() {
           { key: 'channel', label: 'Channel', render: (t) => (
             <>
               <Chip size="small" variant="outlined" label={t.channel === 'email' ? 'Email' : 'In-app'} />
-              {t.channel === 'email' && t.variants.email.mode !== 'plain' && <Chip size="small" color="primary" sx={{ ml: 0.5 }} label={t.variants.email.mode === 'builder' ? 'Designed' : 'HTML'} />}
               {t.variants.whatsapp.body && <Chip size="small" variant="outlined" sx={{ ml: 0.5 }} label="WhatsApp" />}
               {t.variants.telegram.body && <Chip size="small" variant="outlined" sx={{ ml: 0.5 }} label="Telegram" />}
             </>
           ) },
           { key: 'subject', label: 'Subject / title', render: (t) => t.subject || '–' },
-          { key: 'ph', label: 'Placeholders', render: (t) => (t.placeholders.length ? t.placeholders.map((p) => <span key={p.key} className="mono" style={{ marginRight: 6 }}>{`{${p.key}}`}</span>) : '–') },
+          { key: 'ph', label: 'Placeholders', render: (t) => (
+            t.placeholders.length ? (
+              <Accordion disableGutters elevation={0} onClick={(e) => e.stopPropagation()}
+                sx={{ bgcolor: 'transparent', '&::before': { display: 'none' }, maxWidth: 300 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 32, px: 0, '&.Mui-expanded': { minHeight: 32 }, '& .MuiAccordionSummary-content': { my: 0.5 }, '& .MuiAccordionSummary-content.Mui-expanded': { my: 0.5 } }}>
+                  <Typography variant="body2">{t.placeholders.length} placeholder{t.placeholders.length === 1 ? '' : 's'}</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 0, pt: 0, pb: 1 }}>
+                  <Box sx={{ height: 120, overflowY: 'auto', display: 'flex', alignContent: 'flex-start', flexWrap: 'wrap', gap: 0.5, pr: 0.5 }}>
+                    {t.placeholders.map((p) => <Chip key={p.key} size="small" variant="outlined" label={`{${p.key}}`} sx={{ fontFamily: 'monospace' }} />)}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            ) : '–'
+          ) },
           { key: 'updatedAt', label: 'Updated', render: (t) => dateTime(t.updatedAt) },
           { key: 'act', label: '', align: 'right', render: (t) => write && <Button size="small" color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={(e) => { e.stopPropagation(); setRemoving(t); }}>Delete</Button> }
         ]} />

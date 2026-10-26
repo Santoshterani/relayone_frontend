@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography, AppBar, Toolbar, IconButton, Menu, MenuItem, Avatar, useMediaQuery, Divider } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { NAV } from './nav';
@@ -14,11 +14,14 @@ const WIDTH = 232;
 
 export default function AppShell() {
   const { user, logout, can } = useAppContext();
+  const location = useLocation();
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState(null);
   const items = NAV.filter((n) => can(n.permission));
+  const currentPage = NAV.find((n) => location.pathname === n.path || (n.path !== '/' && location.pathname.startsWith(`${n.path}/`)));
+  const headerTitle = currentPage?.label || (user.isSuperAdmin ? 'RelayOne platform' : 'RelayOne support');
 
   const menu = (
     <Box sx={{ width: WIDTH, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -48,7 +51,7 @@ export default function AppShell() {
         <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
           <Toolbar variant="dense" sx={{ gap: 1.5 }}>
             {!wide && <IconButton onClick={() => setOpen(true)} aria-label="Open menu" size="small">☰</IconButton>}
-            <Typography sx={{ fontWeight: 600, flex: 1 }} noWrap>{user.enterprise ? user.enterprise.name : user.isSuperAdmin ? 'RelayOne platform' : 'RelayOne support'}</Typography>
+            <Typography sx={{ fontWeight: 600, flex: 1 }} noWrap>{headerTitle}</Typography>
             {user.enterprise && <AppStatusChip status={user.enterprise.status} />}
             <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Account menu" size="small"><Avatar sx={{ width: 28, height: 28, fontSize: 13, bgcolor: 'primary.main' }}>{user.name.slice(0, 1).toUpperCase()}</Avatar></IconButton>
             <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
@@ -58,7 +61,7 @@ export default function AppShell() {
             </Menu>
           </Toolbar>
         </AppBar>
-        <Box component="main" sx={{ p: { xs: 2, md: 3 }, maxWidth: 1180, width: '100%' }}>
+        <Box component="main" sx={{ p: { xs: 2, md: 3 }, pt: { xs: 1, md: 1.5 }, maxWidth: 1180, width: '100%' }}>
           <ErrorBoundary name="page"><Outlet /></ErrorBoundary>
         </Box>
       </Box>
