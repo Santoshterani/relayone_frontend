@@ -5,6 +5,7 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
@@ -13,9 +14,9 @@ import { useApi, useAppContext, useToast } from '../../../hooks';
 import { enterpriseService } from '../../../services';
 import { INDUSTRIES, SIZES, COUNTRIES, USES, VOLUMES } from '../../../constants';
 import { date } from '../../../utils/format';
-import { openBlob } from '../../../utils/openFile';
 import CompletionBar from './CompletionBar';
 import DocumentList from './DocumentList';
+import DocumentViewer from './DocumentViewer';
 import UploadDialog from './UploadDialog';
 import { DocChip } from './documentUi';
 
@@ -38,12 +39,15 @@ const STATUS_TEXT = {
 };
 
 /** One card with its own Edit button and save bar. `children(disabled)` renders the fields. */
-function Section({ title, subtitle, id, editing, setEditing, canEdit, dirty, busy, onSave, onCancel, children }) {
+function Section({ title, subtitle, icon, id, editing, setEditing, canEdit, dirty, busy, onSave, onCancel, children }) {
   const on = editing === id;
   return (
     <Paper variant="outlined" sx={{ p: 2.5, mb: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1.5 }}>
-        <Box><Typography variant="h3">{title}</Typography>{subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}</Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          {icon && <Box sx={{ display: 'flex', width: 36, height: 36, flex: '0 0 36px', alignItems: 'center', justifyContent: 'center', borderRadius: 1.25, bgcolor: 'rgba(49, 95, 232, 0.09)', color: 'primary.main', '& svg': { fontSize: 18 } }}>{icon}</Box>}
+          <Box><Typography variant="h3">{title}</Typography>{subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}</Box>
+        </Box>
         {canEdit && !on && <Button size="small" variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => setEditing(id)} aria-label={`Edit ${title}`}>Edit</Button>}
       </Box>
       {children(!on)}
@@ -69,6 +73,7 @@ export default function EnterpriseProfile() {
   const [tab, setTab] = useState('company');
   const [editing, setEditing] = useState(null);
   const [uploading, setUploading] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => { if (data) { setForm(data.profile); setErrors({}); } }, [data]);
   const ent = data && data.enterprise;
@@ -107,8 +112,8 @@ export default function EnterpriseProfile() {
     } finally { setBusy(false); }
   };
   const cancelSection = (id) => () => { setForm((f) => ({ ...f, ...Object.fromEntries(SECTIONS[id].map((k) => [k, data.profile[k]])) })); setErrors({}); setEditing(null); };
-  const sec = (id, title, subtitle, render) => (
-    <Section id={id} title={title} subtitle={subtitle} editing={editing} setEditing={setEditing} canEdit={editable && (!editing || editing === id)} dirty={dirtyOf(SECTIONS[id])} busy={busy} onSave={saveSection(id)} onCancel={cancelSection(id)}>{render}</Section>
+  const sec = (id, title, subtitle, icon, render) => (
+    <Section id={id} title={title} subtitle={subtitle} icon={icon} editing={editing} setEditing={setEditing} canEdit={editable && (!editing || editing === id)} dirty={dirtyOf(SECTIONS[id])} busy={busy} onSave={saveSection(id)} onCancel={cancelSection(id)}>{render}</Section>
   );
 
   const submit = async () => {
@@ -120,11 +125,11 @@ export default function EnterpriseProfile() {
   const missing = REQUIRED.filter((k) => !String(data.profile[k] || '').trim());
   const docsLeft = docs.filter((d) => d.status === 'not_submitted').length; const docsRejected = docs.filter((d) => d.status === 'rejected').length;
   const verified = docs.filter((d) => d.status === 'verified').length;
-  const view = (d) => openBlob(() => enterpriseService.documentFile(d.type)).catch((e) => toast.error(e.message || 'Could not open the file.'));
+  const view = (d) => setPreview({ doc: d, load: () => enterpriseService.documentFile(d.type) });
 
   return (
     <>
-      <AppPageHeader title="Enterprise Management" subtitle="Manage your enterprise profile, compliance documents and team accounts" actions={<AppStatusChip status={ent.status} />} />
+      <AppPageHeader title="Enterprise Management" subtitle="Manage your enterprise profile, compliance documents and team accounts" />
       <Alert severity={{ review: 'info', active: 'success', changes: 'warning', rejected: 'error', suspended: 'error' }[ent.status] || 'warning'} sx={{ mb: 2 }}>
         {STATUS_TEXT[ent.status]}{ent.submittedAt && ent.status === 'review' ? ` Submitted ${date(ent.submittedAt)}.` : ''}
         {ent.reviewNote && ['changes', 'rejected'].includes(ent.status) && <Box sx={{ mt: 0.5 }}><b>Note from RelayOne:</b> {ent.reviewNote}</Box>}
@@ -139,7 +144,7 @@ export default function EnterpriseProfile() {
 
       {tab === 'company' && (
         <>
-          {sec('company', 'Company Details', 'Your enterprise legal information and registered address', (off) => (
+          {sec('company', 'Company Details', 'Your enterprise legal information and registered address', <BusinessOutlinedIcon />, (off) => (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>{field('legalName', 'Legal company name', off)}</Grid>
               <Grid size={{ xs: 12, md: 6 }}>{field('brandName', 'Brand name (shown to your users)', off)}</Grid>
@@ -148,19 +153,19 @@ export default function EnterpriseProfile() {
               <Grid size={{ xs: 12, md: 6 }}>{field('website', 'Website', off, { placeholder: 'https://' })}</Grid>
               <Grid size={{ xs: 12, md: 6 }}>{field('registrationNo', 'Registration number', off)}</Grid>
               <Grid size={12}>{field('addressLine', 'Address', off)}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('city', 'City', off)}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('state', 'State', off)}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('postalCode', 'Postal code', off)}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('city', 'City', off)}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('state', 'State', off)}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('postalCode', 'Postal code', off)}</Grid>
               <Grid size={{ xs: 12, md: 6 }}>{select('country', 'Country', off, COUNTRIES)}</Grid>
             </Grid>
           ))}
-          {sec('contact', 'Primary Contact', 'Decisions about your application are emailed to the contact. Low balance alerts go to the billing email.', (off) => (
+          {sec('contact', 'Primary Contact', 'Decisions about your application are emailed to the contact. Low balance alerts go to the billing email.', <PersonOutlineOutlinedIcon />, (off) => (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>{field('contactName', 'Contact name', off)}</Grid>
               <Grid size={{ xs: 12, md: 6 }}>{field('contactDesignation', 'Job title', off)}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('contactEmail', 'Business email', off, { type: 'email' })}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('contactPhone', 'Phone number', off, { placeholder: '+91 98765 43210' })}</Grid>
-              <Grid size={{ xs: 12, md: 4 }}>{field('billingEmail', 'Billing email', off, { type: 'email' })}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('contactEmail', 'Business email', off, { type: 'email' })}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('contactPhone', 'Phone number', off, { placeholder: '+91 98765 43210' })}</Grid>
+              <Grid size={{ xs: 12, md: 6 }}>{field('billingEmail', 'Billing email', off, { type: 'email' })}</Grid>
             </Grid>
           ))}
         </>
@@ -168,13 +173,13 @@ export default function EnterpriseProfile() {
 
       {tab === 'legal' && (
         <>
-          {sec('legal', 'Legal & Tax Information', 'Financial and regulatory details for billing and compliance. Needed on invoices in India.', (off) => (
+          {sec('legal', 'Legal & Tax Information', 'Financial and regulatory details for billing and compliance. Needed on invoices in India.', <GavelOutlinedIcon />, (off) => (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>{field('gstin', 'GSTIN', off, { placeholder: '29ABCDE1234F1Z5' })}</Grid>
               <Grid size={{ xs: 12, md: 6 }}>{field('pan', 'PAN', off, { placeholder: 'ABCDE1234F' })}</Grid>
             </Grid>
           ))}
-          {sec('usage', 'How you will use RelayOne', 'What you plan to send and how much', (off) => (
+          {sec('usage', 'How you will use RelayOne', 'What you plan to send and how much', null, (off) => (
             <>
               <Typography variant="caption" color="text.secondary">What will you send?</Typography>
               <FormGroup row sx={{ mb: 2 }}>{USES.map((u) => <FormControlLabel key={u} label={u} control={<Checkbox size="small" disabled={off} checked={(form.declaredUses || []).includes(u)} onChange={() => toggleUse(u)} />} />)}</FormGroup>
@@ -228,6 +233,7 @@ export default function EnterpriseProfile() {
       )}
 
       <UploadDialog doc={uploading} onClose={() => setUploading(null)} onUploaded={() => { docsApi.reload(); reload(); }} />
+      <DocumentViewer doc={preview?.doc} load={preview?.load} onClose={() => setPreview(null)} />
       <AppConfirmDialog open={confirm} title="Submit for review?" message="Your details and documents are locked while the RelayOne team reviews them. You will get an email with the decision." confirmLabel="Submit" busy={busy} onConfirm={submit} onClose={() => setConfirm(false)} />
     </>
   );

@@ -10,7 +10,7 @@ import { render } from '../../../utils/placeholders';
  * the text or a sample value changes. Email layouts are rendered by the server, so the preview is exactly what is sent.
  * `values` = placeholder key -> sample value (empty ones stay as {key}).
  */
-export default function LivePreview({ inapp, email, subject, body, values }) {
+export default function LivePreview({ inapp, label: labelOverride, email, subject, body, values }) {
   const [device, setDevice] = useState('desktop');
   const [state, setState] = useState({ html: '', loading: false, error: '' });
   const designed = !inapp && email.mode !== 'plain';
@@ -33,7 +33,7 @@ export default function LivePreview({ inapp, email, subject, body, values }) {
   }, [draft, designed]);
 
   const shownSubject = render(subject, values); const shownBody = render(body, values);
-  const label = inapp ? 'Notification' : 'Email';
+  const label = labelOverride || (inapp ? 'Notification' : 'Email');
   return (
     <Paper variant="outlined" sx={{ p: 2, position: { lg: 'sticky' }, top: { lg: 16 }, mb: 2 }} data-testid="live-preview">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, gap: 1 }}>

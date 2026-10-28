@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Box, Chip, InputAdornment, Paper, Typography } from '@mui/material';
+import { Alert, Box, Chip, InputAdornment } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import HighlightOffOutlinedIcon from '@mui/icons-material/HighlightOffOutlined';
 import AppTextField from '../../common/AppTextField';
-import { AppPageHeader, AppDataTable, AppStatusChip, CustomPagination } from '../../common';
+import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, AppCircularLoader, CustomPagination } from '../../common';
 import { useApi } from '../../../hooks';
 import { platformService } from '../../../services';
 import { date, money } from '../../../utils/format';
+import debounce from '../../../utils/debounce';
 import EnterpriseDrawer from './EnterpriseReview';
 
 const PILLS = [['', 'All'], ['review', 'Awaiting review'], ['sandbox', 'Sandbox'], ['changes', 'Changes needed'], ['active', 'Active'], ['suspended', 'Suspended'], ['rejected', 'Rejected']];
 const CARDS = [
-  ['', 'Total enterprises', (c, total) => total, undefined],
-  ['review', 'Awaiting review', (c) => c.review || 0, 'warning.main'],
-  ['changes', 'Changes needed', (c) => c.changes || 0, 'info.main'],
-  ['active', 'Active', (c) => c.active || 0, 'success.main'],
-  ['rejected', 'Rejected', (c) => c.rejected || 0, 'error.main']
+  ['', 'Total enterprises', (c, total) => total, BusinessOutlinedIcon, '#315FE8'],
+  ['review', 'Awaiting review', (c) => c.review || 0, FactCheckOutlinedIcon, '#F59E0B'],
+  ['changes', 'Changes needed', (c) => c.changes || 0, EditNoteOutlinedIcon, '#8B5CF6'],
+  ['active', 'Active', (c) => c.active || 0, CheckCircleOutlineOutlinedIcon, '#10B981'],
+  ['rejected', 'Rejected', (c) => c.rejected || 0, HighlightOffOutlinedIcon, '#EF4444']
 ];
 
 /** Super Admin: every enterprise on the platform. Review requests come first. */
@@ -24,34 +30,40 @@ export default function Platform() {
   const splat = useParams()['*'] || '';
   const openId = /^\d+$/.test(splat) ? splat : null;
   const [status, setStatus] = useState('review');
+  const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const applySearch = useMemo(() => debounce((value) => { setQ(value); setPage(1); }, 350), []);
+  useEffect(() => () => applySearch.cancel(), [applySearch]);
   const overview = useApi(() => platformService.overview(), []);
   const list = useApi(() => platformService.listEnterprises({ page, limit, ...(status ? { status } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [status, page, limit, q]);
   const counts = (overview.data && overview.data.counts) || {};
   const total = overview.data ? overview.data.total : 0;
+  const initialLoading = (overview.loading && !overview.data) || (list.loading && !list.data);
   const pick = (v) => { setStatus(v); setPage(1); };
 
   return (
     <>
       <AppPageHeader title="Enterprise Management" subtitle={overview.data ? `${total} enterprises on the platform. ${overview.data.awaitingReview} waiting for your review.` : ' '} />
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 1.5, mb: 2.5 }}>
-        {CARDS.map(([v, label, val, color]) => (
-          <Paper key={label} variant="outlined" component="button" onClick={() => pick(v)} aria-label={`${label}: show`} sx={{ p: 1.75, textAlign: 'left', cursor: 'pointer', font: 'inherit', bgcolor: 'background.paper', borderColor: status === v ? 'primary.main' : 'divider', boxShadow: status === v ? 1 : 0 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{label}</Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 600, color: color && val(counts, total) ? color : 'text.primary', lineHeight: 1.3 }}>{overview.data ? val(counts, total) : '–'}</Typography>
-          </Paper>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(5, minmax(0, 1fr))' }, gap: 2, mb: 2.5 }}>
+        {CARDS.map(([v, label, val, Icon, color]) => (
+          <AppMetricCard key={label} label={label} value={overview.data ? val(counts, total) : '–'}
+            tone={v === 'active' ? 'good' : v === 'rejected' ? 'bad' : undefined}
+            icon={<Icon fontSize="small" />} accent={color} component="button" onClick={() => pick(v)}
+            selected={status === v} ariaLabel={`${label}: show`} />
         ))}
       </Box>
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
-        <AppTextField placeholder="Search enterprise, contact…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} sx={{ width: { xs: '100%', sm: 300 } }} inputProps={{ 'aria-label': 'Search enterprises' }}
+        <AppTextField placeholder="Search enterprise, contact…" value={search} onChange={(e) => { setSearch(e.target.value); applySearch(e.target.value); }} sx={{ width: { xs: '100%', sm: 300 } }} inputProps={{ 'aria-label': 'Search enterprises' }}
           InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon /></InputAdornment> }} />
         <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
           {PILLS.map(([v, label]) => <Chip key={v} label={label} clickable onClick={() => pick(v)} color={status === v ? 'primary' : 'default'} variant={status === v ? 'filled' : 'outlined'} size="small" sx={{ fontWeight: 500 }} />)}
         </Box>
       </Box>
+      {overview.error && <Alert severity="error" sx={{ mb: 2 }}>{overview.error.message}</Alert>}
       {list.error && <Alert severity="error" sx={{ mb: 2 }}>{list.error.message}</Alert>}
+      {initialLoading && <AppCircularLoader overlay />}
       <AppDataTable loading={list.loading && !list.data} rows={list.data} onRowClick={(e) => navigate(`/platform/${e.id}`)} selectedId={openId ? Number(openId) : undefined}
         empty={{ title: q ? 'No enterprise matches your search' : status === 'review' ? 'Nothing waiting for review' : 'No enterprises here', message: !q && status === 'review' ? 'New applications appear here when an enterprise submits its profile.' : undefined }}
         columns={[

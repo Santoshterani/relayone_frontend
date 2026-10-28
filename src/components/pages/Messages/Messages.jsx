@@ -6,17 +6,18 @@ import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppDataTable, AppStatusChip, CustomPagination } from '../../common';
 import MessageDrawer from './MessageDrawer';
 import SendTestDialog from './SendTestDialog';
-import { useApi, useAppContext } from '../../../hooks';
+import { useApi, useAppContext, useChannelTypes } from '../../../hooks';
 import { messageService } from '../../../services';
 import debounce from '../../../utils/debounce';
 import { dateTime, money4 } from '../../../utils/format';
 
 export default function Messages() {
+  const channelTypes = useChannelTypes();
   const { can } = useAppContext();
   const [filters, setFilters] = useState({ status: '', channel: '', q: '' });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(10);
   const [open, setOpen] = useState(null);
   const [sending, setSending] = useState(false);
 
@@ -39,7 +40,7 @@ export default function Messages() {
         <AppTextField label="Search recipient, id or subject" value={search} onChange={(e) => { setSearch(e.target.value); applySearch(e.target.value); }} sx={{ maxWidth: 320 }} />
         <AppTextField select label="Status" value={filters.status} onChange={setFilter('status')} SelectProps={{ displayEmpty: true }} sx={{ width: 150 }}>
           <MenuItem value="">All</MenuItem>{['queued', 'sent', 'delivered', 'failed'].map((s) => <MenuItem key={s} value={s} sx={{ textTransform: 'capitalize' }}>{s}</MenuItem>)}</AppTextField>
-        <AppTextField select label="Channel" value={filters.channel} onChange={setFilter('channel')} SelectProps={{ displayEmpty: true }} sx={{ width: 150 }}><MenuItem value="">All</MenuItem><MenuItem value="email">Email</MenuItem><MenuItem value="inapp">In-app</MenuItem></AppTextField>
+        <AppTextField select label="Channel" value={filters.channel} onChange={setFilter('channel')} SelectProps={{ displayEmpty: true }} sx={{ width: 150 }}><MenuItem value="">All</MenuItem>{channelTypes.types.map((c) => <MenuItem key={c.code} value={c.code}>{c.label}</MenuItem>)}</AppTextField>
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
       <AppDataTable loading={loading && !data} rows={data} onRowClick={(m) => setOpen(m.id)}
@@ -47,7 +48,7 @@ export default function Messages() {
         columns={[
           { key: 'createdAt', label: 'Time', render: (m) => dateTime(m.createdAt) },
           { key: 'to', label: 'To', render: (m) => <b>{m.to}</b> },
-          { key: 'channel', label: 'Channel', render: (m) => (m.channel === 'email' ? 'Email' : 'In-app') },
+          { key: 'channel', label: 'Channel', render: (m) => channelTypes.labelOf(m.channel) },
           { key: 'subject', label: 'Subject', render: (m) => m.subject || '–' },
           { key: 'status', label: 'Status', render: (m) => <AppStatusChip status={m.status} /> },
           { key: 'attempts', label: 'Tries', align: 'right', render: (m) => (m.attempts > 1 || m.nextRetryAt ? <span title={m.nextRetryAt ? `Next retry ${dateTime(m.nextRetryAt)}` : undefined}>{m.attempts}{m.nextRetryAt ? ' · retrying' : ''}</span> : m.attempts) },

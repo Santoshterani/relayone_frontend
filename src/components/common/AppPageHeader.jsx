@@ -10,8 +10,8 @@ export default function AppPageHeader({ title, subtitle, actions }) {
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2.5, flexWrap: 'wrap' }}>
-      <Box>{showTitle && <Typography variant="h1">{title}</Typography>}{subtitle && <Typography color="text.secondary" sx={{ mt: showTitle ? 0.25 : 0 }}>{subtitle}</Typography>}</Box>
-      {actions && <Box sx={{ display: 'flex', gap: 1 }}>{actions}</Box>}
+      <Box sx={{ flex: '1 1 0', minWidth: 0 }}>{showTitle && <Typography variant="h1">{title}</Typography>}{subtitle && <Typography color="text.secondary" sx={{ mt: showTitle ? 0.25 : 0 }}>{subtitle}</Typography>}</Box>
+      {actions && <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>{actions}</Box>}
     </Box>
   );
 }

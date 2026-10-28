@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert, Box, Drawer, IconButton, Typography, Divider } from '@mui/material';
 import { AppStatusChip, AppSkeletonLoader } from '../../common';
-import { useApi } from '../../../hooks';
+import { useApi, useChannelTypes } from '../../../hooks';
 import { messageService } from '../../../services';
 import { dateTime, money4 } from '../../../utils/format';
 
@@ -10,6 +10,7 @@ const Row = ({ label, children }) => (<Box sx={{ display: 'flex', py: 0.6, gap: 
 
 /** Details of one message and its status history. */
 export default function MessageDrawer({ id, onClose }) {
+  const channelTypes = useChannelTypes();
   const { data: m, loading, error } = useApi(() => (id ? messageService.getMessage(id) : Promise.resolve({ data: null })), [id]);
   return (
     <Drawer anchor="right" open={!!id} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 460 }, p: 2.5 } }}>
@@ -24,8 +25,8 @@ export default function MessageDrawer({ id, onClose }) {
           <Typography className="mono" variant="caption" color="text.secondary">{m.id}</Typography>
           <Divider sx={{ my: 1.5 }} />
           <Row label="To">{m.to}</Row>
-          <Row label="Channel">{m.channel === 'email' ? 'Email' : 'In-app'}</Row>
-          <Row label="Sent from">{SENDER[m.senderMode]}{m.from ? ` (${m.from})` : ''}</Row>
+          <Row label="Channel">{channelTypes.labelOf(m.channel)}</Row>
+          <Row label="Sent from">{SENDER[m.senderMode] || channelTypes.labelOf(m.channel)}{m.from ? ` (${m.from})` : ''}</Row>
           {m.templateName && <Row label="Template">{m.templateName}</Row>}
           <Row label="Cost">{money4(m.cost)}{m.status === 'failed' ? ' (refunded)' : ''}</Row>
           <Row label="Attempts">{m.attempts}</Row>

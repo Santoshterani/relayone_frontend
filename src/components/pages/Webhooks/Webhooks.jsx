@@ -91,7 +91,7 @@ export default function Webhooks() {
         <AppDataTable loading={deliveries.loading && !deliveries.data} rows={deliveries.data} empty={{ title: 'Nothing sent yet', message: 'Events appear here after your first message changes status.' }}
           columns={[
             { key: 'createdAt', label: 'Time', render: (d) => dateTime(d.createdAt) },
-            { key: 'messageStatus', label: 'Event', render: (d) => <>message.<AppStatusChip status={d.messageStatus} /></> },
+            { key: 'event', label: 'Event', render: () => 'message' },
             { key: 'url', label: 'Endpoint', render: (d) => <span className="mono">{d.url}</span> },
             { key: 'status', label: 'Result', render: (d) => <AppStatusChip status={d.status} /> },
             { key: 'responseCode', label: 'HTTP', render: (d) => d.responseCode || '–' },

@@ -22,7 +22,7 @@ const Block = ({ n, title, note, code }) => {
 /** What the developer pastes into the website. Built from the event, so the key and the data fields are already filled in. */
 export default function DeveloperSnippet({ event, open, onClose }) {
   if (!event) return null;
-  const sample = Object.fromEntries((event.fields || []).map((f) => [f.key, f.sample || '…']));
+  const sample = Object.fromEntries((event.fields || []).filter((f) => !f.source || f.source === 'sent').map((f) => [f.fixedValue || f.key, f.sample || '…']));
   const dataJson = JSON.stringify(sample, null, 2).replace(/\n/g, '\n  ');
   const choose = event.mode === 'choose';
   const server = choose

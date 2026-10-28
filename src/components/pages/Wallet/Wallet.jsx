@@ -11,7 +11,7 @@ import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsAc
 import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppMetricCard, AppDataTable, AppConfirmDialog, AppSkeletonLoader, CustomPagination } from '../../common';
-import { useApi, useAppContext, useToast } from '../../../hooks';
+import { useApi, useAppContext, useChannelTypes, useToast } from '../../../hooks';
 import { walletService, planService, paymentService } from '../../../services';
 import { pay, PaymentCancelled } from '../../../utils/razorpay';
 import { date, dateTime, money, money4 } from '../../../utils/format';
@@ -20,6 +20,7 @@ const QUICK = [5, 10, 25, 50];
 const TYPE = { topup: ['success', 'Top-up'], charge: ['default', 'Charge'], refund: ['info', 'Refund'], adjustment: ['info', 'Credit'] };
 
 export default function Wallet() {
+  const channelTypes = useChannelTypes();
   const { can, user } = useAppContext();
   const toast = useToast();
   const topup = can('wallet.topup');
@@ -77,7 +78,7 @@ export default function Wallet() {
         <Grid size={{ xs: 12, md: 8 }}>
           <AppSectionCard title="Wallet price per message" icon={<PriceChangeOutlinedIcon />} sx={{ mb: 0, height: '100%' }}>
             <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-              {[['Email, your own SMTP', prices.email_own], ['Email, shared sender', prices.email_shared], ['In-app', prices.inapp]].map(([l, p]) => (
+              {channelTypes.types.flatMap((c) => c.priceCodes).filter((pc) => prices[pc.code] !== undefined).map((pc) => [pc.label, prices[pc.code]]).map(([l, p]) => (
                 <Box key={l}><Typography variant="caption" color="text.secondary">{l}</Typography><Typography sx={{ fontSize: 18, fontWeight: 600 }}>{money4(p)}</Typography></Box>))}
             </Box>
           </AppSectionCard>
@@ -85,17 +86,19 @@ export default function Wallet() {
       </Grid>
 
       {plans.data && (() => {
-        const p = plans.data; const live = p.buckets.filter((b) => b.remaining > 0);
-        const liveQuota = live.reduce((a, b) => a + b.quota, 0);
+        const p = plans.data;
+        const active = p.buckets.filter((b) => (b.status ? b.status === 'active' : !b.expired) && b.remaining > 0);
+        const liveQuota = active.reduce((a, b) => a + b.quota, 0);
         const exhausted = p.buckets.length > 0 && p.remaining === 0;
-        const low = p.remaining > 0 && p.remaining <= Math.ceil(liveQuota * 0.2);
+        const activeRemaining = active.reduce((a, b) => a + b.remaining, 0);
+        const low = activeRemaining > 0 && activeRemaining <= Math.ceil(liveQuota * 0.2);
         return (
           <>
             {exhausted && <Alert severity="warning" sx={{ mb: 2 }}>Your plan messages are used up. New messages are charged to your wallet at the normal price. Buy a plan below to get the plan rate again.</Alert>}
-            {p.buckets.some((b) => b.expired && b.lost > 0) && <Alert severity="info" sx={{ mb: 2 }}>A plan expired with unused messages, and they cannot be used any more. Messages are charged to your wallet at the normal price until you buy a new plan.</Alert>}
-            {live.some((b) => b.daysLeft <= 7) && <Alert severity="warning" sx={{ mb: 2 }}>A plan expires within {Math.max(...live.filter((b) => b.daysLeft <= 7).map((b) => b.daysLeft))} days. Use its messages or buy a new plan, because unused messages are lost on expiry.</Alert>}
-            {low && <Alert severity="warning" sx={{ mb: 2 }}>Only {p.remaining.toLocaleString()} plan messages left. Buy another plan so you keep the plan rate. If you don't, messages after that are charged to your wallet.</Alert>}
-            <AppSectionCard title="Prepaid plans" icon={<Inventory2OutlinedIcon />} subtitle="Buy messages in bulk for a lower price per message. Each plan is valid for a set number of days, like a prepaid pack. Unused messages are lost when it expires. Plan messages are used first, then the wallet pays."
+            {p.buckets.some((b) => b.expired && b.lost > 0) && <Alert severity="info" sx={{ mb: 2 }}>A plan expired with unused messages, and they cannot be used any more. Any queued plan activates next; otherwise, messages are charged to your wallet.</Alert>}
+            {active.some((b) => b.daysLeft <= 7) && <Alert severity="warning" sx={{ mb: 2 }}>A plan expires within {Math.max(...active.filter((b) => b.daysLeft <= 7).map((b) => b.daysLeft))} days. Use its messages or buy a new plan, because unused messages are lost on expiry.</Alert>}
+            {low && <Alert severity="warning" sx={{ mb: 2 }}>Only {activeRemaining.toLocaleString()} messages left in your active plan. Buy another plan so it is ready when this one ends.</Alert>}
+            <AppSectionCard title="Prepaid plans" icon={<Inventory2OutlinedIcon />} subtitle="Buy messages in bulk for a lower price per message. Plans activate in purchase order: each new plan starts when the previous one is used up or expires, and its validity starts on activation. Unused messages are lost when it expires. If no plan bucket is active, messages are charged to your wallet."
               actions={<Box sx={{ textAlign: 'right' }}><Typography variant="caption" color="text.secondary">Plan messages left</Typography><Typography sx={{ fontSize: 20, fontWeight: 600 }} data-testid="plan-remaining">{p.remaining.toLocaleString()}</Typography></Box>}>
               {p.plans.length === 0 ? <Typography color="text.secondary">No plans are on sale right now.</Typography> : (
                 <Grid container spacing={2}>
@@ -117,7 +120,12 @@ export default function Wallet() {
                   <AppDataTable rows={p.buckets} columns={[
                     { key: 'planName', label: 'Plan', render: (b) => b.planName },
                     { key: 'purchasedAt', label: 'Bought', render: (b) => date(b.purchasedAt) },
-                    { key: 'expiresAt', label: 'Valid until', render: (b) => (b.expired ? <Chip size="small" color="error" variant="outlined" label={`Expired ${date(b.expiresAt)}`} sx={{ height: 22 }} /> : <Box><Typography variant="body2">{date(b.expiresAt)}</Typography><Typography variant="caption" color={b.daysLeft <= 7 ? 'warning.main' : 'text.secondary'}>{b.daysLeft} day{b.daysLeft === 1 ? '' : 's'} left</Typography></Box>) },
+                    { key: 'status', label: 'Status', render: (b) => {
+                      const status = b.status || (b.expired ? 'expired' : b.remaining === 0 ? 'completed' : 'active');
+                      const [color, label] = status === 'active' ? ['success', 'Active'] : status === 'queued' ? ['default', 'Queued'] : status === 'expired' ? ['error', 'Expired'] : ['default', 'Used up'];
+                      return <Chip size="small" color={color} variant="outlined" label={label} sx={{ height: 22 }} />;
+                    } },
+                    { key: 'expiresAt', label: 'Valid until', render: (b) => (b.status === 'queued' ? <Typography variant="body2" color="text.secondary">After previous plan</Typography> : b.expired ? <Chip size="small" color="error" variant="outlined" label={`Expired ${date(b.expiresAt)}`} sx={{ height: 22 }} /> : <Box><Typography variant="body2">{date(b.expiresAt)}</Typography><Typography variant="caption" color={b.daysLeft <= 7 ? 'warning.main' : 'text.secondary'}>{b.daysLeft} day{b.daysLeft === 1 ? '' : 's'} left</Typography></Box>) },
                     { key: 'pricePaid', label: 'Paid', align: 'right', render: (b) => money(b.pricePaid) },
                     { key: 'usage', label: 'Used', width: 220, render: (b) => (<Box><LinearProgress variant="determinate" value={(b.used / b.quota) * 100} sx={{ height: 6, borderRadius: 3, mb: 0.5 }} /><Typography variant="caption" color="text.secondary">{b.used.toLocaleString()} of {b.quota.toLocaleString()}</Typography></Box>) },
                     { key: 'remaining', label: 'Left', align: 'right', render: (b) => (b.expired ? (b.lost > 0 ? <Chip size="small" label={`${b.lost.toLocaleString()} lost`} sx={{ height: 22 }} /> : <Chip size="small" label="Used up" sx={{ height: 22 }} />) : b.remaining === 0 ? <Chip size="small" label="Used up" sx={{ height: 22 }} /> : b.remaining.toLocaleString()) }

@@ -33,9 +33,9 @@ export default function Support() {
         actions={can('tickets.write') && <Button variant="contained" startIcon={<AddCommentOutlinedIcon />} onClick={() => setOpen(true)}>Raise ticket</Button>} />
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.5, mb: 2.5 }}>
         <AppMetricCard label="Pending" value={s.pending ?? '–'} hint="Open, in progress or escalated" tone={s.pending ? 'warn' : undefined} />
-        <AppMetricCard label="In progress" value={s.inProgress ?? '–'} />
-        <AppMetricCard label="Resolved" value={s.resolved ?? '–'} tone="good" />
-        <AppMetricCard label="Closed" value={s.closed ?? '–'} />
+        <AppMetricCard label="In progress" value={s.inProgress ?? '–'} hint="Being handled by the support team" />
+        <AppMetricCard label="Resolved" value={s.resolved ?? '–'} hint="Answered and marked as resolved" tone="good" />
+        <AppMetricCard label="Closed" value={s.closed ?? '–'} hint="Completed and no longer active" />
       </Box>
       <Paper variant="outlined" sx={{ p: 2, mb: 2.5, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <Box sx={{ flex: '1 1 220px' }}>

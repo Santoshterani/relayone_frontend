@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, Tab, Tabs, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, Paper, Tab, Tabs, Table, TableBody, TableCell, TableContainer, TableRow, Typography } from '@mui/material';
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import HighlightOffOutlinedIcon from '@mui/icons-material/HighlightOffOutlined';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
@@ -8,12 +8,12 @@ import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutli
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import AppTextField from '../../common/AppTextField';
 import Grid from '@mui/material/Grid2';
-import { AppMetricCard, AppSkeletonLoader, AppStatusChip, AppConfirmDialog } from '../../common';
+import { AppMetricCard, AppCircularLoader, AppStatusChip, AppConfirmDialog } from '../../common';
 import { useApi, useToast } from '../../../hooks';
 import { platformService } from '../../../services';
 import { date, money } from '../../../utils/format';
-import { openBlob } from '../../../utils/openFile';
 import DocumentList from '../Enterprise/DocumentList';
+import DocumentViewer from '../Enterprise/DocumentViewer';
 
 const FIELDS = [
   ['Company', [['legalName', 'Legal name'], ['brandName', 'Brand name'], ['industry', 'Industry'], ['companySize', 'Size'], ['website', 'Website'], ['registrationNo', 'Registration no.']]],
@@ -86,14 +86,18 @@ function Facts({ title, rows, value }) {
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="subtitle2" sx={{ mb: 1.5 }}>{title}</Typography>
-      <Grid container spacing={2}>
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+        <Table size="small" aria-label={`${title} details`}>
+          <TableBody>
         {rows.map(([k, label]) => (
-          <Grid key={k} size={{ xs: 12, sm: 6 }}>
-            <Typography variant="caption" color="text.secondary">{label}</Typography>
-            <Typography sx={{ wordBreak: 'break-word' }}>{value(k) || <Box component="span" sx={{ color: 'text.disabled' }}>Not given</Box>}</Typography>
-          </Grid>
+          <TableRow key={k}>
+            <TableCell sx={{ width: '50%', bgcolor: 'action.hover', color: 'text.secondary', fontWeight: 600 }}>{label}</TableCell>
+            <TableCell sx={{ wordBreak: 'break-word' }}>{value(k) || <Box component="span" sx={{ color: 'text.disabled' }}>Not given</Box>}</TableCell>
+          </TableRow>
         ))}
-      </Grid>
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 }
@@ -107,7 +111,9 @@ export default function EnterpriseDrawer({ id, onClose, onChanged }) {
   const [confirm, setConfirm] = useState(null); // 'suspend' | 'reactivate'
   const [busy, setBusy] = useState(false);
   const [docReview, setDocReview] = useState(null);
+  const [preview, setPreview] = useState(null);
   useEffect(() => { setTab('overview'); }, [id]);
+  useEffect(() => { setPreview(null); }, [id]);
 
   const changed = () => { reload(); if (onChanged) onChanged(); };
   const run = async () => {
@@ -123,7 +129,7 @@ export default function EnterpriseDrawer({ id, onClose, onChanged }) {
 
   return (
     <Drawer anchor="right" open={!!id} onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', md: 760 }, maxWidth: '100%', display: 'flex', flexDirection: 'column' }, role: 'dialog', 'aria-label': e ? `Enterprise ${e.name}` : 'Enterprise' }}>
-      {loading && !data && <Box sx={{ p: 3 }}><AppSkeletonLoader variant="card" /></Box>}
+      {loading && !data && <Box sx={{ p: 3 }}><AppCircularLoader /></Box>}
       {error && !data && <Box sx={{ p: 3 }}><Alert severity="error" action={<Button color="inherit" startIcon={<RefreshOutlinedIcon />} onClick={onClose}>Close</Button>}>{error.message}</Alert></Box>}
       {e && (
         <>
@@ -162,7 +168,7 @@ export default function EnterpriseDrawer({ id, onClose, onChanged }) {
             {tab === 'documents' && (
               <>
                 <Typography color="text.secondary" sx={{ mb: 2 }}>Open each file, then verify it or reject it with a reason. Approval needs all five verified.</Typography>
-                {docs.length ? <DocumentList docs={docs} admin onView={(d) => openBlob(() => platformService.documentFile(id, d.type)).catch((err) => toast.error(err.message || 'Could not open the file.'))} onReview={(doc, decision) => setDocReview({ doc, decision })} /> : <Typography color="text.secondary">No documents.</Typography>}
+                {docs.length ? <DocumentList docs={docs} admin onView={(d) => setPreview({ doc: d, load: () => platformService.documentFile(id, d.type) })} onReview={(doc, decision) => setDocReview({ doc, decision })} /> : <Typography color="text.secondary">No documents.</Typography>}
               </>
             )}
           </Box>
@@ -175,6 +181,7 @@ export default function EnterpriseDrawer({ id, onClose, onChanged }) {
             </Box>
           )}
           <DocDialog id={id} target={docReview} onClose={() => setDocReview(null)} onDone={changed} />
+          <DocumentViewer doc={preview?.doc} load={preview?.load} onClose={() => setPreview(null)} />
           <DecisionDialog id={id} decision={decision} onClose={() => setDecision(null)} onDone={changed} />
           <AppConfirmDialog open={!!confirm} danger={confirm === 'suspend'} busy={busy} title={confirm === 'suspend' ? `Suspend ${e.name}?` : `Reactivate ${e.name}?`}
             confirmLabel={confirm === 'suspend' ? 'Suspend' : 'Reactivate'}

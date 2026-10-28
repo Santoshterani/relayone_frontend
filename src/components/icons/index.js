@@ -4,7 +4,7 @@ import { SvgIcon } from '@mui/material';
 const make = (d) => function Icon(props) { return <SvgIcon fontSize="small" viewBox="0 0 24 24" {...props}><path d={d} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></SvgIcon>; };
 export const DashboardIcon = make('M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z');
 export const BuildingIcon = make('M4 21V4l8-2v19M12 8l8 2v11M8 8h.01M8 12h.01M8 16h.01M16 14h.01M16 18h.01');
-export const KeyIcon = make('M14 10a4 4 0 11-3.5 6L3 16v-3h3v-2h3l1.5-1.5A4 4 0 0114 10zM16 8h.01');
+export const KeyIcon = make('M12.65 10A6 6 0 1 0 12.65 14H16v3h3v-3h3v-4h-9.35ZM7 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z');
 export const TemplateIcon = make('M4 4h16v16H4zM4 9h16M9 9v11');
 export const ChannelIcon = make('M3 7l9 6 9-6M3 5h18v14H3z');
 export const MessageIcon = make('M4 5h16v11H9l-5 4z');

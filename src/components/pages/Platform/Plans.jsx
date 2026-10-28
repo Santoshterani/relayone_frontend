@@ -9,13 +9,12 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import Grid from '@mui/material/Grid2';
 import AppTextField from '../../common/AppTextField';
-import { AppPageHeader, AppSectionCard, AppEmptyState, AppSkeletonLoader } from '../../common';
-import { useApi, useToast } from '../../../hooks';
+import { AppPageHeader, AppSectionCard, AppEmptyState, AppSkeletonLoader, AppCircularLoader } from '../../common';
+import { useApi, useChannelTypes, useToast } from '../../../hooks';
 import { planService, walletService, platformService } from '../../../services';
 import { money, money4 } from '../../../utils/format';
 import PlanDialog from './PlanDialog';
 
-const PRICES = [['email_own', 'Email, enterprise\'s own SMTP', 'We only run the queue, retries and tracking.'], ['email_shared', 'Email, shared RelayOne sender', 'Includes the sending itself.'], ['inapp', 'In-app notification', 'Delivered over the live connection or the inbox.']];
 
 /** Super Admin: the wallet price per message, and the prepaid plans (message buckets) enterprises can buy. */
 function Limits() {
@@ -35,7 +34,7 @@ function Limits() {
     setBusy(true);
     try { await platformService.updateSettings({ minWalletBalance: Number(f.minWalletBalance), retryCeiling: Number(f.retryCeiling), retryWaitCeilingMinutes: Number(f.retryWaitCeilingMinutes), perMinuteCeiling: Number(f.perMinuteCeiling) }); toast.success('Settings saved.'); reload(); } catch (e2) { toast.error(e2.message); } finally { setBusy(false); }
   };
-  if (loading && !data) return <AppSkeletonLoader variant="card" />;
+  if (loading && !data) return <AppCircularLoader overlay />;
   if (error && !data) return <Alert severity="error">{error.message}</Alert>;
   return (
     <Box component="form" onSubmit={save} noValidate sx={{ display: 'grid', gap: 2 }}>
@@ -55,6 +54,7 @@ function Limits() {
 }
 
 export default function Plans() {
+  const channelTypes = useChannelTypes();
   const toast = useToast();
   const prices = useApi(() => walletService.getPrices(), []);
   const plans = useApi(() => planService.listAll(), []);
@@ -62,6 +62,7 @@ export default function Plans() {
   const [dialog, setDialog] = useState({ open: false, plan: null });
   const [tab, setTab] = useState('plans');
   useEffect(() => { if (prices.data) setDraft(Object.fromEntries(Object.entries(prices.data).map(([k, v]) => [k, String(Number(v))]))); }, [prices.data]);
+  const activeLoading = tab === 'plans' ? plans.loading && !plans.data : tab === 'pricing' && prices.loading && !prices.data;
 
   const save = async (code) => {
     const n = Number(draft[code]);
@@ -73,6 +74,7 @@ export default function Plans() {
 
   return (
     <>
+      {activeLoading && <AppCircularLoader overlay />}
       <AppPageHeader title="Plans & pricing" subtitle="Manage prepaid message plans and wallet prices."
         actions={tab === 'plans' && <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={() => setDialog({ open: true, plan: null })}>New plan</Button>} />
       <Tabs value={tab} onChange={(e, value) => setTab(value)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} aria-label="Plans and pricing sections">
@@ -86,7 +88,7 @@ export default function Plans() {
       {tab === 'pricing' && <AppSectionCard title="Wallet price per message" subtitle="Charged when an enterprise has no plan messages left. Changes apply to messages accepted from now on.">
         {prices.loading && !prices.data ? <AppSkeletonLoader variant="card" /> : prices.error && !prices.data ? <Alert severity="error">{prices.error.message}</Alert> : (
           <Box sx={{ display: 'grid', gap: 2 }}>
-            {PRICES.map(([code, label, hint]) => (
+            {channelTypes.types.flatMap((c) => c.priceCodes).map((pc) => [pc.code, pc.label, pc.note]).map(([code, label, hint]) => (
               <Box key={code} sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <Box sx={{ width: 280 }}><Typography sx={{ fontWeight: 500 }}>{label}</Typography><Typography variant="caption" color="text.secondary">{hint}</Typography></Box>
                 <AppTextField size="small" label="USD" type="number" value={draft[code] ?? ''} onChange={(e) => { setDraft({ ...draft, [code]: e.target.value }); setErrors({}); }} error={!!errors[code]} helperText={errors[code]} inputProps={{ step: '0.0001', min: 0, 'aria-label': `Price: ${label}` }} sx={{ width: 150 }} />

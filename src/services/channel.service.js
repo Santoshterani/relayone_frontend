@@ -8,3 +8,8 @@ export const removeEmail = () => del(`${CHANNELS}/email`);
 export const emailUsage = () => get(`${MESSAGES}/email-usage`);
 export const saveInapp = (body) => put(`${CHANNELS}/inapp`, body);
 export const saveRules = (body) => put(`${CHANNELS}/email/rules`, body);
+export const getCatalog = () => get(`${CHANNELS}/catalog`);
+export const getTypes = () => get(`${CHANNELS}/types`);
+export const saveConnection = (channel, config) => put(`${CHANNELS}/connections/${channel}`, { config });
+export const verifyConnection = (channel) => post(`${CHANNELS}/connections/${channel}/verify`);
+export const removeConnection = (channel) => del(`${CHANNELS}/connections/${channel}`);

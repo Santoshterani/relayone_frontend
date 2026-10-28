@@ -5,11 +5,14 @@ import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined';
 import Grid from '@mui/material/Grid2';
 import { AppPageHeader, AppSectionCard, AppMetricCard, AppDataTable, AppStatusChip, AppSkeletonLoader, AppEmptyState, DonutChart, BarChart } from '../../common';
 import DailyChart from './DailyChart';
-import { useApi, useAppContext } from '../../../hooks';
+import { useApi, useAppContext, useChannelTypes } from '../../../hooks';
 import { dashboardService } from '../../../services';
 import { money, money4, dateTime } from '../../../utils/format';
 
@@ -29,6 +32,7 @@ function AccountBanner({ account, can }) {
 }
 
 export default function Dashboard() {
+  const channelTypes = useChannelTypes();
   const { user, can } = useAppContext();
   const { data, loading, error, reload } = useApi(() => dashboardService.getDashboard(), []);
   if (user.isSuperAdmin) return <Navigate to="/overview" replace />;
@@ -36,6 +40,8 @@ export default function Dashboard() {
   if (error) return <><AppPageHeader title="Dashboard" /><Alert severity="error" action={<Button color="inherit" startIcon={<RefreshOutlinedIcon />} onClick={reload}>Retry</Button>}>{error.message}</Alert></>;
 
   const { account, wallet, plan, stats, setup } = data;
+  // senders of channels added after email and in-app (their sender mode is the channel code)
+  const otherSenders = stats ? Object.entries(stats.bySender).filter(([k]) => !['own_smtp', 'shared', 'inapp'].includes(k)).map(([k, v], i) => ({ label: channelTypes.labelOf(k), value: v, color: ['#7C3AED', '#DB2777', '#0EA5E9', '#65A30D'][i % 4] })) : [];
   const doneCount = setup.steps.filter((s) => s.done).length;
 
   return (
@@ -45,13 +51,13 @@ export default function Dashboard() {
       {wallet && wallet.lowBalance && <Alert severity="warning" sx={{ mb: 2 }} action={can('wallet.topup') && <Button component={RouterLink} to="/wallet" size="small" color="inherit" startIcon={<AccountBalanceWalletOutlinedIcon />} sx={{ fontWeight: 600 }}>Top up</Button>}>Wallet balance {money(wallet.balance)} is below your alert level of {money(wallet.threshold)}.</Alert>}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        {wallet && <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Wallet balance" value={money(wallet.balance)} tone={wallet.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(wallet.threshold)}`} /></Grid>}
-        {plan && <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Plan messages left" value={plan.remaining.toLocaleString()} tone={plan.hasPlan && plan.remaining === 0 ? 'warn' : undefined} hint={plan.hasPlan ? (plan.remaining === 0 ? 'Used up. The wallet pays now' : 'Used before the wallet') : 'No plan yet'} /></Grid>}
+        {wallet && <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Wallet balance" value={money(wallet.balance)} tone={wallet.lowBalance ? 'warn' : undefined} hint={`Alert below ${money(wallet.threshold)}`} icon={<AccountBalanceWalletOutlinedIcon fontSize="small" />} accent="#F59E0B" /></Grid>}
+        {plan && <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Plan messages left" value={plan.remaining.toLocaleString()} tone={plan.hasPlan && plan.remaining === 0 ? 'warn' : undefined} hint={plan.hasPlan ? (plan.remaining === 0 ? 'Used up. The wallet pays now' : 'Used before the wallet') : 'No plan yet'} icon={<ChecklistOutlinedIcon fontSize="small" />} accent="#315FE8" /></Grid>}
         {stats && <>
-          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Messages sent" value={stats.total.toLocaleString()} hint={`${stats.today} today`} /></Grid>
-          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Delivery rate" value={stats.deliveryRate == null ? '–' : `${stats.deliveryRate}%`} tone={stats.deliveryRate != null && stats.deliveryRate < 90 ? 'bad' : undefined} hint="Delivered of delivered + failed" /></Grid>
-          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Failed" value={stats.byStatus.failed} tone={stats.byStatus.failed ? 'bad' : undefined} hint={`${stats.byStatus.queued} waiting in queue`} /></Grid>
-          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Spend, last 7 days" value={money4(stats.spend7d)} hint="From your wallet, plan messages are free" /></Grid>
+          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Messages sent" value={stats.total.toLocaleString()} hint={`${stats.today} today`} icon={<MailOutlineIcon fontSize="small" />} accent="#10B981" /></Grid>
+          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Delivery rate" value={stats.deliveryRate == null ? '–' : `${stats.deliveryRate}%`} tone={stats.deliveryRate != null && stats.deliveryRate < 90 ? 'bad' : undefined} hint="Delivered of delivered + failed" icon={<CheckCircleOutlineOutlinedIcon fontSize="small" />} accent="#8B5CF6" /></Grid>
+          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Failed" value={stats.byStatus.failed} tone={stats.byStatus.failed ? 'bad' : undefined} hint={`${stats.byStatus.queued} waiting in queue`} icon={<ReportProblemOutlinedIcon fontSize="small" />} accent="#EF4444" /></Grid>
+          <Grid size={{ xs: 6, md: 4 }}><AppMetricCard label="Spend, last 7 days" value={money4(stats.spend7d)} hint="From your wallet, plan messages are free" icon={<PaymentsOutlinedIcon fontSize="small" />} accent="#0EA5E9" /></Grid>
         </>}
       </Grid>
 
@@ -70,13 +76,13 @@ export default function Dashboard() {
             <Grid size={{ xs: 12, md: 7 }}>
               <AppSectionCard sx={{ mb: 0, height: '100%' }}>
                 <BarChart title="Messages by sender" subtitle="Who sent the message, and so what it cost" emptyText="No messages yet."
-                  data={[{ label: 'Your own SMTP', value: stats.bySender.own_smtp }, { label: 'Shared sender', value: stats.bySender.shared, color: '#F59E0B' }, { label: 'In-app', value: stats.bySender.inapp, color: '#1F9D8B' }]} />
+                  data={[{ label: 'Your own SMTP', value: stats.bySender.own_smtp }, { label: 'Shared sender', value: stats.bySender.shared, color: '#F59E0B' }, { label: 'In-app', value: stats.bySender.inapp, color: '#1F9D8B' }, ...otherSenders]} />
               </AppSectionCard>
             </Grid>
             <Grid size={{ xs: 12, md: 5 }}>
               <AppSectionCard sx={{ mb: 0, height: '100%' }}>
-                <DonutChart title="Email and in-app" centerLabel="messages" emptyText="No messages yet."
-                  data={[{ label: 'Email', value: stats.bySender.own_smtp + stats.bySender.shared, color: '#12285E' }, { label: 'In-app', value: stats.bySender.inapp, color: '#1F9D8B' }]} />
+                <DonutChart title="By channel" centerLabel="messages" emptyText="No messages yet."
+                  data={[{ label: 'Email', value: stats.bySender.own_smtp + stats.bySender.shared, color: '#12285E' }, { label: 'In-app', value: stats.bySender.inapp, color: '#1F9D8B' }, ...otherSenders]} />
               </AppSectionCard>
             </Grid>
           </Grid>

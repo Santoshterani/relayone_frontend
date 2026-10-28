@@ -24,7 +24,9 @@ export default function SignIn() {
     try {
       const { data } = await authService.login({ email: v.email.trim(), password: v.password });
       startSession(data);
-      navigate((location.state && location.state.from) || (data.user.isSuperAdmin ? '/overview' : data.user.isStaff ? '/desk' : '/'), { replace: true });
+      const requestedPath = location.state && location.state.from;
+      const home = data.user.isSuperAdmin ? '/overview' : data.user.isStaff ? '/desk' : '/';
+      navigate(requestedPath && requestedPath !== '/' ? requestedPath : home, { replace: true });
     } catch (err) {
       if (err.status === 403 && /verify|confirm/i.test(err.message)) setNeedsVerify(true);
       throw err;

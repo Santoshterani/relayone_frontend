@@ -8,7 +8,7 @@ import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import AppTextField from '../../common/AppTextField';
-import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, AppSectionCard, DonutChart, CustomPagination } from '../../common';
+import { AppPageHeader, AppDataTable, AppStatusChip, AppMetricCard, AppSectionCard, AppCircularLoader, DonutChart, CustomPagination } from '../../common';
 import { useApi, useAppContext } from '../../../hooks';
 import { supportService } from '../../../services';
 import TicketTrend from './TicketTrend';
@@ -26,11 +26,13 @@ export default function Desk() {
   const sum = useApi(() => supportService.summary(), []);
   const agents = useApi(() => supportService.agents(), []);
   const list = useApi(() => supportService.list({ page, limit, ...(tab ? { status: tab } : {}), ...(level === 'breached' ? { breached: true } : level ? { level } : {}), ...(priority ? { priority } : {}), ...(category ? { category } : {}), ...(assignee === 'none' ? { unassigned: true } : assignee ? { assigneeId: assignee } : {}), ...(q.trim() ? { q: q.trim() } : {}) }), [tab, page, limit, level, priority, category, assignee, q]);
+  const initialLoading = (sum.loading && !sum.data) || (agents.loading && !agents.data) || (list.loading && !list.data);
   const s = sum.data; const c = s ? s.counts : {};
   const reset = (fn) => (e) => { fn(e.target.value); setPage(1); };
 
   return (
     <>
+      {initialLoading && <AppCircularLoader overlay />}
       <AppPageHeader title="Support desk" subtitle={s ? `${c.total} ticket${c.total === 1 ? "" : "s"} in all. ${c.pending} pending${c.escalated ? `, ${c.escalated} escalated` : ''}${c.unassigned ? `, ${c.unassigned} unassigned` : ''}.` : ' '} />
       {sum.error && <Alert severity="error" sx={{ mb: 2 }}>{sum.error.message}</Alert>}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.5, mb: 1.5 }}>

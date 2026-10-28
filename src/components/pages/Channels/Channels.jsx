@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, Chip, FormControlLabel, LinearProgress, MenuItem, Switch, Tab, Tabs, Typography } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
+import ChatOutlinedIcon from '@mui/icons-material/ChatOutlined';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
@@ -229,9 +230,54 @@ function InappCard({ data, canWrite, onChanged }) {
   );
 }
 
+/** Connect any channel that needs credentials (Google Chat and future ones). The form is drawn from the channel's own list of fields. */
+function ConnectionCard({ type, canWrite, onChanged }) {
+  const toast = useToast();
+  const conn = type.connection;
+  const [vals, setVals] = useState({});
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState('');
+  const [removing, setRemoving] = useState(false);
+  const connected = conn.status !== 'not_connected';
+  const run = async (what, fn, done) => {
+    setBusy(what); setErrors({});
+    try { await fn(); if (done) toast.success(done); setVals({}); onChanged(); } catch (e) { const fe = e.fieldErrors ? e.fieldErrors() : {}; if (Object.keys(fe).length) setErrors(fe); else toast.error(e.message); } finally { setBusy(''); }
+  };
+  const save = (e) => { e.preventDefault(); return run('save', () => channelService.saveConnection(type.code, vals), 'Saved. Press Verify to test it.'); };
+  const chip = { verified: ['success', 'Connected'], unverified: ['warning', 'Saved, not verified'], failed: ['error', 'Verification failed'], not_connected: ['default', 'Not connected'] }[conn.status] || ['default', conn.status];
+  return (
+    <AppSectionCard title={type.label} icon={<ChatOutlinedIcon />} actions={<Chip size="small" color={chip[0]} variant={chip[0] === 'default' ? 'outlined' : 'filled'} label={chip[1]} />}>
+      <Typography color="text.secondary" sx={{ mb: 2 }}>Connect your {type.label} once. After that you send with <code>channel: "{type.code}"</code>, use {type.label} templates and events, and see every message in the logs.</Typography>
+      {conn.status === 'failed' && conn.lastError && <Alert severity="error" sx={{ mb: 2 }}>{conn.lastError}</Alert>}
+      {conn.status === 'verified' && <Alert severity="success" sx={{ mb: 2 }}>Verified {conn.verifiedAt ? dateTime(conn.verifiedAt) : ''}. Messages on this channel are charged at the {type.label} price.</Alert>}
+      <Box component="form" onSubmit={save} noValidate sx={{ display: 'grid', gap: 2, maxWidth: 640 }}>
+        {type.connectionFields.map((f) => {
+          const cur = conn.values[f.key] || {};
+          return (
+            <AppTextField key={f.key} label={f.label} required={f.required && !cur.set} optional={!f.required} type={f.secret ? 'password' : 'text'} autoComplete="off"
+              value={vals[f.key] ?? (f.secret ? '' : cur.value || '')} onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setErrors((s) => ({ ...s, [f.key]: undefined })); }}
+              placeholder={f.secret && cur.set ? `Saved ${cur.hint}. Leave empty to keep it.` : f.placeholder} error={!!errors[f.key]} helperText={errors[f.key] || f.help} disabled={!canWrite} />
+          );
+        })}
+        {canWrite && (
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button type="submit" variant="contained" startIcon={<SaveOutlinedIcon />} disabled={!!busy}>{busy === 'save' ? 'Saving…' : 'Save'}</Button>
+            {connected && <Button variant="outlined" startIcon={<VerifiedOutlinedIcon />} onClick={() => run('verify', () => channelService.verifyConnection(type.code), 'Verification finished.')} disabled={!!busy}>{busy === 'verify' ? 'Checking…' : 'Verify'}</Button>}
+            {connected && <Button color="error" startIcon={<DeleteOutlineOutlinedIcon />} onClick={() => setRemoving(true)} disabled={!!busy}>Remove</Button>}
+          </Box>
+        )}
+      </Box>
+      <AppConfirmDialog open={removing} danger title={`Disconnect ${type.label}?`} confirmLabel="Remove" message={`Messages on ${type.label} will be refused until you connect it again.`}
+        onConfirm={() => { setRemoving(false); return run('remove', () => channelService.removeConnection(type.code), `${type.label} disconnected.`); }} onClose={() => setRemoving(false)} />
+    </AppSectionCard>
+  );
+}
+
 export default function Channels() {
   const { can } = useAppContext();
   const { data, loading, error, reload } = useApi(() => channelService.getChannels(), []);
+  const types = useApi(() => channelService.getTypes(), []);
+  const connectable = (types.data || []).filter((t) => t.needsConnection);
   const [tab, setTab] = useState('email');
   if (loading && !data) return <><AppPageHeader title="Channels" /><AppSkeletonLoader variant="card" /></>;
   if (error && !data) return <Alert severity="error">{error.message}</Alert>;
@@ -241,10 +287,12 @@ export default function Channels() {
       <Tabs value={tab} onChange={(e, value) => setTab(value)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }} aria-label="Message channels">
         <Tab value="email" icon={<MailOutlineIcon />} iconPosition="start" label="Mail" sx={{ textTransform: 'none' }} />
         <Tab value="inapp" icon={<NotificationsOutlinedIcon />} iconPosition="start" label="In-app" sx={{ textTransform: 'none' }} />
+        {connectable.map((t) => <Tab key={t.code} value={t.code} icon={<ChatOutlinedIcon />} iconPosition="start" label={t.label} sx={{ textTransform: 'none' }} />)}
       </Tabs>
       {tab === 'email'
         ? <><EmailCard data={data} canWrite={can('channels.write')} onChanged={reload} /><RulesCard data={data} canWrite={can('channels.write')} onChanged={reload} /></>
-        : <InappCard data={data} canWrite={can('channels.write')} onChanged={reload} />}
+        : tab === 'inapp' ? <InappCard data={data} canWrite={can('channels.write')} onChanged={reload} />
+          : connectable.filter((t) => t.code === tab).map((t) => <ConnectionCard key={t.code} type={t} canWrite={can('channels.write')} onChanged={types.reload} />)}
     </>
   );
 }

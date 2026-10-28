@@ -12,7 +12,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import AppTextField from '../../common/AppTextField';
 import { AppPageHeader, AppSectionCard, AppSkeletonLoader } from '../../common';
-import { useAppContext, useToast } from '../../../hooks';
+import { useAppContext, useChannelTypes, useToast } from '../../../hooks';
 import { eventService, templateService } from '../../../services';
 import { openPopup } from '../../../utils/relayonePopup';
 import DeveloperSnippet from './DeveloperSnippet';
@@ -32,6 +32,7 @@ function analyse(templates, fields) {
 }
 
 export default function EventEditor() {
+  const channelTypes = useChannelTypes();
   const { id } = useParams();
   const isNew = !id || id === 'new';
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ export default function EventEditor() {
 
   const apply = (e) => {
     setSaved(e);
-    setForm({ name: e.name, key: e.key, channel: e.channel, mode: e.mode, status: e.status, templateIds: e.templates.map((t) => t.id), defaultTemplateId: e.defaultTemplateId, fields: e.fields.map((f) => ({ key: f.key, sample: f.sample })),
+    setForm({ name: e.name, key: e.key, channel: e.channel, mode: e.mode, status: e.status, templateIds: e.templates.map((t) => t.id), defaultTemplateId: e.defaultTemplateId, fields: e.fields.map((f) => ({ key: f.key, sample: f.sample, source: f.source || 'sent', fixedValue: f.fixedValue || '', label: f.label || '' })),
       brand: { name: e.brand.name, logoUrl: e.brand.logoUrl, color: e.brand.color }, origins: e.allowedOrigins.join('\n') });
   };
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function EventEditor() {
     return { ...f, templateIds: ids, defaultTemplateId: ids.includes(f.defaultTemplateId) ? f.defaultTemplateId : (ids[0] || null) };
   });
   const setField = (i, patch) => setForm((f) => ({ ...f, fields: f.fields.map((x, k) => (k === i ? { ...x, ...patch } : x)) }));
-  const addMissing = () => setForm((f) => ({ ...f, fields: [...f.fields, ...Object.entries(missing).map(([key, m]) => ({ key, sample: m.sample }))] }));
+  const addMissing = () => setForm((f) => ({ ...f, fields: [...f.fields, ...Object.entries(missing).map(([key, m]) => ({ key, sample: m.sample, source: 'sent', fixedValue: '', label: '' }))] }));
 
   const save = async (e) => {
     e && e.preventDefault();
@@ -82,7 +83,7 @@ export default function EventEditor() {
     setErrors(errs); if (Object.keys(errs).length) return;
     setBusy(true);
     try {
-      const body = { name: form.name.trim(), mode: form.mode, status: form.status, templateIds: form.templateIds, defaultTemplateId: form.defaultTemplateId, fields: form.fields.map((f) => ({ key: f.key, sample: f.sample || '' })),
+      const body = { name: form.name.trim(), mode: form.mode, status: form.status, templateIds: form.templateIds, defaultTemplateId: form.defaultTemplateId, fields: form.fields.map((f) => ({ key: f.key, sample: f.sample || '', source: f.source || 'sent', fixedValue: f.fixedValue || '', label: f.label || '' })),
         brand: { name: form.brand.name.trim(), logoUrl: form.brand.logoUrl.trim(), color: form.brand.color }, allowedOrigins: form.origins.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean) };
       const { data } = isNew ? await eventService.createEvent({ ...body, key: form.key, channel: form.channel }) : await eventService.updateEvent(id, body);
       toast.success('Event saved.');
@@ -99,7 +100,7 @@ export default function EventEditor() {
   if (loading) return <><AppPageHeader title="Event" /><AppSkeletonLoader variant="card" /></>;
   if (loadError) return <Alert severity="error">{loadError}</Alert>;
   const field = (k) => ({ value: form[k], onChange: set(k), error: !!errors[k], helperText: errors[k], disabled: !write });
-  const dirty = saved && JSON.stringify({ ...form, origins: form.origins.trim() }) !== JSON.stringify((() => ({ name: saved.name, key: saved.key, channel: saved.channel, mode: saved.mode, status: saved.status, templateIds: saved.templates.map((t) => t.id), defaultTemplateId: saved.defaultTemplateId, fields: saved.fields.map((f) => ({ key: f.key, sample: f.sample })), brand: { ...saved.brand }, origins: saved.allowedOrigins.join('\n') }))());
+  const dirty = saved && JSON.stringify({ ...form, origins: form.origins.trim() }) !== JSON.stringify((() => ({ name: saved.name, key: saved.key, channel: saved.channel, mode: saved.mode, status: saved.status, templateIds: saved.templates.map((t) => t.id), defaultTemplateId: saved.defaultTemplateId, fields: saved.fields.map((f) => ({ key: f.key, sample: f.sample, source: f.source || 'sent', fixedValue: f.fixedValue || '', label: f.label || '' })), brand: { ...saved.brand }, origins: saved.allowedOrigins.join('\n') }))());
   const missingKeys = Object.keys(missing);
 
   return (
@@ -120,8 +121,7 @@ export default function EventEditor() {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography sx={{ fontSize: 12, fontWeight: 600, mb: 0.75 }}>Channel</Typography>
                 <ToggleButtonGroup size="small" exclusive value={form.channel} onChange={(e, v) => { if (v && isNew) setForm((f) => ({ ...f, channel: v, templateIds: [], defaultTemplateId: null })); }} aria-label="Channel" disabled={!isNew}>
-                  <ToggleButton value="email" sx={{ px: 2 }}><EmailOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />Email</ToggleButton>
-                  <ToggleButton value="inapp" sx={{ px: 2 }}><NotificationsOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />In-app</ToggleButton>
+                  {channelTypes.types.map((c) => <ToggleButton key={c.code} value={c.code} sx={{ px: 2 }}>{c.code === 'email' && <EmailOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />}{c.code === 'inapp' && <NotificationsOutlinedIcon sx={{ mr: 0.75, fontSize: 18 }} />}{c.label}</ToggleButton>)}
                 </ToggleButtonGroup>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }} sx={{ display: 'flex', alignItems: 'flex-end' }}>
@@ -130,9 +130,9 @@ export default function EventEditor() {
             </Grid>
           </AppSectionCard>
 
-          <AppSectionCard title="2. Which templates can be used?" subtitle={`Only ${form.channel === 'email' ? 'email' : 'in-app'} templates are listed. Create more under Templates.`}>
+          <AppSectionCard title="2. Which templates can be used?" subtitle={`Only ${channelTypes.labelOf(form.channel)} templates are listed. Create more under Templates.`}>
             {errors.templateIds && <Alert severity="error" sx={{ mb: 1.5 }}>{errors.templateIds}</Alert>}
-            {!available.length ? <Alert severity="info">You have no {form.channel === 'email' ? 'email' : 'in-app'} templates yet. <Button size="small" onClick={() => navigate('/templates/new')}>Create one</Button></Alert> : (
+            {!available.length ? <Alert severity="info">You have no {channelTypes.labelOf(form.channel)} templates yet. <Button size="small" onClick={() => navigate('/templates/new')}>Create one</Button></Alert> : (
               <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden', mb: 2 }}>
                 {available.map((t, i) => {
                   const on = form.templateIds.includes(t.id);
@@ -159,8 +159,8 @@ export default function EventEditor() {
             </Grid>
           </AppSectionCard>
 
-          <AppSectionCard title="3. Data your website will send" subtitle="We check every chosen template against this list, so nothing goes out with a blank."
-            actions={write && <Button size="small" startIcon={<AddOutlinedIcon />} onClick={() => setForm((f) => ({ ...f, fields: [...f.fields, { key: '', sample: '' }] }))}>Add field</Button>}>
+          <AppSectionCard title="3. Where each value comes from" subtitle="Set this once here. Your website only sends what is marked “Website sends it”, so new placeholders never need a code change."
+            actions={write && <Button size="small" startIcon={<AddOutlinedIcon />} onClick={() => setForm((f) => ({ ...f, fields: [...f.fields, { key: '', sample: '', source: 'sent', fixedValue: '', label: '' }] }))}>Add field</Button>}>
             {errors.fields && <Alert severity="error" sx={{ mb: 1.5 }}>{errors.fields}</Alert>}
             {missingKeys.length > 0 && (
               <Alert severity="warning" sx={{ mb: 1.5 }} action={write && <Button color="inherit" size="small" onClick={addMissing}>Add {missingKeys.length === 1 ? 'it' : 'them'}</Button>}>
@@ -170,11 +170,22 @@ export default function EventEditor() {
             {!form.fields.length ? <Typography color="text.secondary">No fields yet. Pick templates above and press “Add” to list the fields they need.</Typography> : (
               <Box sx={{ overflowX: 'auto' }}>
                 <Table size="small">
-                  <TableHead><TableRow><TableCell>Field name</TableCell><TableCell>Sample value</TableCell><TableCell>Used in</TableCell><TableCell>Status</TableCell><TableCell /></TableRow></TableHead>
+                  <TableHead><TableRow><TableCell>Field name</TableCell><TableCell>Value comes from</TableCell><TableCell>Details</TableCell><TableCell>Sample value</TableCell><TableCell>Used in</TableCell><TableCell>Status</TableCell><TableCell /></TableRow></TableHead>
                   <TableBody>
                     {form.fields.map((f, i) => (
                       <TableRow key={i}>
-                        <TableCell sx={{ minWidth: 150 }}><AppTextField value={f.key} onChange={(e) => setField(i, { key: e.target.value.trim() })} placeholder="order_id" disabled={!write} slotProps={{ htmlInput: { className: 'mono', 'aria-label': 'Field name' } }} /></TableCell>
+                        <TableCell sx={{ minWidth: 220 }}><AppTextField value={f.key} onChange={(e) => setField(i, { key: e.target.value.trim() })} placeholder="order_id" disabled={!write} slotProps={{ htmlInput: { className: 'mono', 'aria-label': 'Field name' } }} /></TableCell>
+                        <TableCell sx={{ minWidth: 190 }}>
+                          <AppTextField select value={f.source || 'sent'} onChange={(e) => setField(i, { source: e.target.value, fixedValue: '' })} disabled={!write} slotProps={{ select: { native: true }, htmlInput: { 'aria-label': `Where ${f.key || 'the field'} comes from` } }}>
+                            <option value="sent">Website sends it</option><option value="fixed">Fixed value</option><option value="auto">Automatic</option><option value="ask">Person types it in the popup</option>
+                          </AppTextField>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 190 }}>
+                          {f.source === 'fixed' && <AppTextField value={f.fixedValue} onChange={(e) => setField(i, { fixedValue: e.target.value })} placeholder="Same value every time" disabled={!write} slotProps={{ htmlInput: { 'aria-label': `Fixed value for ${f.key}` } }} />}
+                          {f.source === 'auto' && <AppTextField select value={f.fixedValue || 'date'} onChange={(e) => setField(i, { fixedValue: e.target.value })} disabled={!write} slotProps={{ select: { native: true }, htmlInput: { 'aria-label': `Automatic value for ${f.key}` } }}><option value="date">Today’s date</option><option value="year">Current year</option><option value="datetime">Date and time now</option></AppTextField>}
+                          {f.source === 'ask' && <AppTextField value={f.label} onChange={(e) => setField(i, { label: e.target.value })} placeholder="Label in the popup" disabled={!write} slotProps={{ htmlInput: { 'aria-label': `Popup label for ${f.key}` } }} />}
+                          {(!f.source || f.source === 'sent') && <AppTextField value={f.fixedValue} onChange={(e) => setField(i, { fixedValue: e.target.value.trim() })} placeholder={`Sent as ${f.key || 'this name'} (or another name)`} disabled={!write} slotProps={{ htmlInput: { 'aria-label': `Name the website uses for ${f.key}` } }} />}
+                        </TableCell>
                         <TableCell sx={{ minWidth: 170 }}><AppTextField value={f.sample} onChange={(e) => setField(i, { sample: e.target.value })} placeholder="Used in the preview and the test" disabled={!write} slotProps={{ htmlInput: { 'aria-label': `Sample value for ${f.key}` } }} /></TableCell>
                         <TableCell>{used[f.key] ? used[f.key].join(', ') : '–'}</TableCell>
                         <TableCell>{used[f.key] ? <Chip size="small" color="success" label="Ready" sx={{ height: 22 }} /> : <Chip size="small" variant="outlined" label="Not used" sx={{ height: 22 }} />}</TableCell>

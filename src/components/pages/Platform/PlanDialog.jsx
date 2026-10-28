@@ -48,7 +48,7 @@ export default function PlanDialog({ open, plan, onClose, onSaved }) {
               <AppTextField label="Price (USD)" type="number" value={f.price} onChange={set('price')} error={!!errors.price} helperText={errors.price} inputProps={{ step: '0.01', min: 0 }} fullWidth />
               <AppTextField label="Messages" type="number" value={f.messages} onChange={set('messages')} error={!!errors.messages} helperText={errors.messages} inputProps={{ min: 1 }} fullWidth />
             </Box>
-            <AppTextField label="Validity (days)" type="number" value={f.validityDays} onChange={set('validityDays')} error={!!errors.validityDays} helperText={errors.validityDays || 'Like a prepaid pack: unused messages are lost after this many days from purchase.'} inputProps={{ min: 1, max: 3650 }} />
+            <AppTextField label="Validity (days)" type="number" value={f.validityDays} onChange={set('validityDays')} error={!!errors.validityDays} helperText={errors.validityDays || 'Like a prepaid pack: validity starts when the bucket activates; unused messages are lost after this many days.'} inputProps={{ min: 1, max: 3650 }} />
             {perMessage && <Typography variant="caption" color="text.secondary">Works out to ${perMessage} per message, for email and in-app alike.</Typography>}
             <AppTextField label="Show order" type="number" value={f.sortOrder} onChange={set('sortOrder')} helperText="Smaller numbers are shown first." inputProps={{ min: 0 }} />
             <FormControlLabel control={<Switch checked={f.isActive} onChange={(e) => setF({ ...f, isActive: e.target.checked })} />} label={f.isActive ? 'On sale' : 'Hidden from new buyers'} />

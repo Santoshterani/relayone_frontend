@@ -7,7 +7,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import AppTextField from '../../common/AppTextField';
-import { AppPageHeader, AppDataTable, AppStatusChip, AppConfirmDialog, CustomPagination } from '../../common';
+import { AppPageHeader, AppDataTable, AppStatusChip, AppConfirmDialog, AppCircularLoader, CustomPagination } from '../../common';
 import { useApi, useAppContext, useToast } from '../../../hooks';
 import { staffService } from '../../../services';
 
@@ -102,6 +102,7 @@ function EnterpriseTeams({ staff }) {
   const teams = useApi(() => staffService.teams({ page, limit }), [page, limit]);
   return (
     <>
+      {teams.loading && !teams.data && <AppCircularLoader overlay />}
       {teams.error && <Alert severity="error" sx={{ mb: 2 }}>{teams.error.message}</Alert>}
       <AppDataTable loading={teams.loading && !teams.data} rows={teams.data} rowKey="enterpriseId" empty={{ title: 'No enterprises yet' }}
         columns={[
@@ -142,6 +143,7 @@ export default function SupportTeam() {
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}><Tab value="staff" icon={<ManageAccountsOutlinedIcon />} iconPosition="start" label="Staff" sx={{ textTransform: 'none' }} /><Tab value="teams" icon={<GroupsOutlinedIcon />} iconPosition="start" label="Enterprise teams" sx={{ textTransform: 'none' }} /></Tabs>
       {tab === 'teams' && <EnterpriseTeams staff={staff.data} />}
       {tab === 'staff' && <>
+      {staff.loading && !staff.data && <AppCircularLoader overlay />}
       {staff.error && <Alert severity="error" sx={{ mb: 2 }}>{staff.error.message}</Alert>}
       <AppDataTable loading={staff.loading && !staff.data} rows={staff.data} empty={{ title: 'No support staff yet', message: isSuper ? 'Add a Support Admin to start.' : 'Add your first agent.' }}
         columns={[
